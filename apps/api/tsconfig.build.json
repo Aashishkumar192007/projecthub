@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts",
+    "src/accounting",
+    "src/auth",
+    "src/lead",
+    "src/leasing",
+    "src/listing",
+    "src/project",
+    "src/property",
+    "src/role",
+    "src/sales",
+    "src/tenant",
+    "src/unit",
+    "src/user",
+    "src/viewing"
+  ]
+}

@@ -1,0 +1,1 @@
+export function DocumentsTab() { return <div className="p-8 text-[#71717A]">Documents mock view.</div>; }

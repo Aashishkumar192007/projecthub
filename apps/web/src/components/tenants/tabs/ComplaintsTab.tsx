@@ -1,0 +1,1 @@
+export function ComplaintsTab() { return <div className="p-8 text-[#71717A]">Complaints mock view.</div>; }

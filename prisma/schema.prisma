@@ -1,0 +1,3120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// ------------------------------------------------------
+// 1. TENANT PROVISIONING & SUBSCRIPTION
+// ------------------------------------------------------
+model Tenant {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String   @unique
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subscriptions    Subscription[]
+  organizations    Organization[]
+  users            User[]
+  roles            Role[]
+  auditLogs        AuditLog[]
+  workflows        Workflow[]
+  propertyProjects PropertyProject[]
+  salesBookings    SalesBooking[]
+  customers        Customer[]
+  leads            Lead[]
+  leadNotes        LeadNote[]
+  leadActivities   LeadActivity[]
+  siteVisits       SiteVisit[]
+  interestedUnits  InterestedUnit[]
+  bookings         Booking[]
+
+  opportunities            Opportunity[]
+  listings                 Listing[]
+  invoices                 Invoice[]
+  payments                 Payment[]
+  contracts                Contract[]
+  kycRecords               KycRecord[]
+  leases                   Lease[]
+  rentRolls                RentRoll[]
+  societies                Society[]
+  maintenanceBills         MaintenanceBill[]
+  complaints               Complaint[]
+  vendors                  Vendor[]
+  purchaseOrders           PurchaseOrder[]
+  contractors              Contractor[]
+  departments              Department[]
+  employees                Employee[]
+  investmentFunds          InvestmentFund[]
+  investors                Investor[]
+  disputeCases             DisputeCase[]
+  evictionNotices          EvictionNotice[]
+  aiModels                 AiModel[]
+  aiInteractionLogs        AiInteractionLog[]
+  aiDocumentTemplates      AiDocumentTemplate[]
+  masterPlans              MasterPlan[]
+  coworkingSpaces          CoworkingSpace[]
+  hotelProperties          HotelProperty[]
+  mallProperties           MallProperty[]
+  warehouses               Warehouse[]
+  procurementBids          ProcurementBid[]
+  valuationReports         ValuationReport[]
+  dataSubscriptions        DataSubscription[]
+  energyGrids              EnergyGrid[]
+  carbonCredits            CarbonCredit[]
+  parkingFacilities        ParkingFacility[]
+  vehicles                 Vehicle[]
+  eventSpaces              EventSpace[]
+  marketingCampaigns       MarketingCampaign[]
+  adPlacements             AdPlacement[]
+  wasteBins                WasteBin[]
+  recyclingMetrics         RecyclingMetric[]
+  feedbackSurveys          FeedbackSurvey[]
+  biDashboards             BIDashboard[]
+  biMetrics                BIMetric[]
+  reportExports            ReportExport[]
+  brokerageAgencies        BrokerageAgency[]
+  bimModels                BIMModel[]
+  apiApplications          ApiApplication[]
+  systemSettings           SystemSetting[]
+  compliancePolicies       CompliancePolicy[]
+  familyMembers            FamilyMember[]
+  documents                Document[]
+  workOrders               WorkOrder[]
+  vendorContracts          VendorContract[]
+  amcContracts             AmcContract[]
+  facilityInspections      FacilityInspection[]
+  maintenanceChecklists    MaintenanceChecklist[]
+  maintenanceTasks         MaintenanceTask[]
+  committeeMembers         CommitteeMember[]
+  agmMeetings              AgmMeeting[]
+  polls                    Poll[]
+  pets                     Pet[]
+  emergencyContacts        EmergencyContact[]
+  guestInvitations         GuestInvitation[]
+  deliveryLogs             DeliveryLog[]
+  facilityBookings         FacilityBooking[]
+  VendorKyc                VendorKyc[]
+  VendorPerformance        VendorPerformance[]
+  PurchaseRequisition      PurchaseRequisition[]
+  GoodsReceiptNote         GoodsReceiptNote[]
+  ItemCategory             ItemCategory[]
+  ItemMaster               ItemMaster[]
+  InventoryTransaction     InventoryTransaction[]
+  InventoryLedger          InventoryLedger[]
+  Budget                   Budget[]
+  Campus                   Campus[]
+  AssetCategory            AssetCategory[]
+  MaintenancePlan          MaintenancePlan[]
+  UtilityMeter             UtilityMeter[]
+  ESGMetric                ESGMetric[]
+  LandParcel               LandParcel[]
+  Portfolio                Portfolio[]
+  SalesExecutiveAssignment SalesExecutiveAssignment[]
+  Negotiation              Negotiation[]
+  Reservation              Reservation[]
+
+  @@map("tenants")
+}
+
+model Subscription {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan      String // MVP, PRO, ENTERPRISE
+  startDate DateTime
+  endDate   DateTime?
+  status    String    @default("ACTIVE")
+
+  @@map("subscriptions")
+}
+
+// ------------------------------------------------------
+// 2. IAM (IDENTITY & ACCESS MANAGEMENT)
+// ------------------------------------------------------
+model Organization {
+  id          String         @id @default(uuid())
+  tenantId    String
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  parentOrgId String?
+  parentOrg   Organization?  @relation("OrgHierarchy", fields: [parentOrgId], references: [id])
+  childOrgs   Organization[] @relation("OrgHierarchy")
+  users       User[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String        @id @default(uuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+
+  email        String    @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  status       String    @default("ACTIVE")
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  userRoles                UserRole[]
+  auditLogs                AuditLog[]
+  salesBookings            SalesBooking[]
+  authoredLeadNotes        LeadNote[]                 @relation("LeadNoteAuthor")
+  authoredLeadActivities   LeadActivity[]             @relation("LeadActivityUser")
+  assignedSiteVisits       SiteVisit[]                @relation("SiteVisitAgent")
+  assignedBookings         Booking[]                  @relation("BookingAgent")
+  assignedLeads            Lead[]                     @relation("LeadAssignedAgent")
+  employee                 Employee?
+  aiInteractions           AiInteractionLog[]
+  biDashboards             BIDashboard[]
+  reportExports            ReportExport[]
+  SalesExecutiveAssignment SalesExecutiveAssignment[]
+  Reservation              Reservation[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Role {
+  id          String  @id @default(uuid())
+  tenantId    String? // Null means it's a global system role
+  tenant      Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isSystem    Boolean @default(false)
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+
+  @@unique([tenantId, name])
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  resource    String // e.g. "Property", "User"
+  action      String // e.g. "CREATE", "READ", "UPDATE", "DELETE"
+  description String?
+
+  roles RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model UserRole {
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ------------------------------------------------------
+// 3. COMPLIANCE & AUDIT LOGGING
+// ------------------------------------------------------
+model AuditLog {
+  id       String  @id @default(uuid())
+  tenantId String
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  entityType    String // e.g. "USER", "PROPERTY"
+  entityId      String
+  action        String // CREATED, UPDATED, DELETED
+  previousState String?
+  newState      String?
+  timestamp     DateTime @default(now())
+
+  @@index([tenantId, entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ------------------------------------------------------
+// 4. AUTOMATION & WORKFLOW
+// ------------------------------------------------------
+model Workflow {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name         String
+  triggerEvent String // e.g. "USER_CREATED"
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  actions WorkflowAction[]
+
+  @@map("workflows")
+}
+
+model WorkflowAction {
+  id             String   @id @default(uuid())
+  workflowId     String
+  workflow       Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  actionType     String // e.g. "EMAIL", "WEBHOOK"
+  payloadPayload String // Template configuration
+
+  @@map("workflow_actions")
+}
+
+// ------------------------------------------------------
+// 5. PROPERTY MASTER & INVENTORY (Phase 2)
+// ------------------------------------------------------
+model PropertyProject {
+  id          String  @id @default(uuid())
+  tenantId    String
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String
+  type        String // RESIDENTIAL, COMMERCIAL, LAND
+  address     String?
+  coordinates String?
+
+  plotId   String?
+  landPlot LandPlot? @relation(fields: [plotId], references: [id])
+
+  towers               Tower[]
+  society              Society?
+  boqs                 BillOfQuantities[]
+  purchaseOrders       PurchaseOrder[]
+  inventoryItems       InventoryItem[]
+  facilityAssets       FacilityAsset[]
+  visitorLogs          VisitorLog[]
+  iotDevices           IotDevice[]
+  investmentFund       InvestmentFund?
+  disputeCases         DisputeCase[]
+  hotelProperty        HotelProperty?
+  mallProperty         MallProperty?
+  energyGrids          EnergyGrid[]
+  energyUsageLogs      EnergyUsageLog[]
+  carbonCredits        CarbonCredit[]
+  parkingFacilities    ParkingFacility[]
+  eventSpaces          EventSpace[]
+  marketingCampaigns   MarketingCampaign[]
+  adPlacements         AdPlacement[]
+  wasteBins            WasteBin[]
+  recyclingMetrics     RecyclingMetric[]
+  communityPosts       CommunityPost[]
+  feedbackSurveys      FeedbackSurvey[]
+  biMetrics            BIMetric[]
+  commissionStructures CommissionStructure[]
+  bimModels            BIMModel[]
+  Campus               Campus?               @relation(fields: [campusId], references: [id])
+  campusId             String?
+  Zone                 Zone[]
+  UtilityMeter         UtilityMeter[]
+  LandParcel           LandParcel?           @relation(fields: [landParcelId], references: [id])
+  landParcelId         String?
+  BoqTemplate          BoqTemplate[]
+  DailyProgressReport  DailyProgressReport[]
+  Defect               Defect[]
+  SafetyAudit          SafetyAudit[]
+  IncidentReport       IncidentReport[]
+  ProjectWip           ProjectWip?
+  archivedAt           DateTime?
+  portfolioId          String?
+  portfolio            Portfolio?            @relation(fields: [portfolioId], references: [id])
+  blocks               Block[]
+  SiteVisit            SiteVisit[]
+  Booking              Booking[]
+
+  @@map("property_projects")
+}
+
+model Tower {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name            String
+  totalFloors     Int
+
+  floors     Floor[]
+  archivedAt DateTime?
+  blockId    String?
+  block      Block?    @relation(fields: [blockId], references: [id])
+
+  @@map("towers")
+}
+
+model Floor {
+  id          String @id @default(uuid())
+  towerId     String
+  tower       Tower  @relation(fields: [towerId], references: [id], onDelete: Cascade)
+  floorNumber String
+
+  units      Unit[]
+  archivedAt DateTime?
+
+  @@map("floors")
+}
+
+model Unit {
+  id               String  @id @default(uuid())
+  floorId          String
+  floor            Floor   @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  unitNumber       String
+  type             String // APARTMENT, VILLA, OFFICE, RETAIL
+  carpetArea       Float?
+  superBuiltUpArea Float?
+  status           String  @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD, BLOCKED
+  basePrice        Decimal
+
+  amenities        UnitAmenity[]
+  salesBookings    SalesBooking[]
+  listings         Listing[]
+  leases           Lease[]
+  maintenanceBills MaintenanceBill[]
+  complaints       Complaint[]
+  visitorLogs      VisitorLog[]
+  iotDevices       IotDevice[]
+  coworkingSpace   CoworkingSpace?
+  hotelRoom        HotelRoom?
+  retailStore      RetailStore?
+  valuationReports ValuationReport[]
+  parkingSlot      ParkingSlot?
+  documents        Document[]
+  ownerId          String?
+  owner            Customer?         @relation("UnitOwner", fields: [ownerId], references: [id])
+  SnagList         SnagList[]
+  archivedAt       DateTime?
+  InterestedUnit   InterestedUnit[]
+  Booking          Booking[]
+  Negotiation      Negotiation[]
+  Reservation      Reservation[]
+
+  @@map("units")
+}
+
+model UnitAmenity {
+  id          String @id @default(uuid())
+  unitId      String
+  unit        Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  amenityName String
+
+  @@map("unit_amenities")
+}
+
+// ------------------------------------------------------
+// 6. SALES ERP (Phase 2)
+// ------------------------------------------------------
+model SalesBooking {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitId        String
+  unit          Unit     @relation(fields: [unitId], references: [id])
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  agentId       String
+  agent         User     @relation(fields: [agentId], references: [id])
+  bookingAmount Decimal
+  totalValue    Decimal
+  status        String   @default("DRAFT") // DRAFT, PENDING_PAYMENT, CONFIRMED, CANCELLED
+  bookingDate   DateTime @default(now())
+
+  invoices  Invoice[]
+  contracts Contract[]
+
+  @@map("sales_bookings")
+}
+
+// ------------------------------------------------------
+// 7. CRM CLOUD (Phase 3)
+// ------------------------------------------------------
+model Customer {
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  email     String?
+  phone     String?
+  kycStatus String  @default("PENDING") // PENDING, VERIFIED
+
+  leads             Lead[]
+  opportunities     Opportunity[]
+  salesBookings     SalesBooking[]
+  invoices          Invoice[]
+  payments          Payment[]
+  contracts         Contract[]
+  kycRecord         KycRecord?
+  leases            Lease[]
+  complaints        Complaint[]
+  approvedVisitors  VisitorLog[]
+  investorProfile   Investor?
+  disputeCases      DisputeCase[]
+  evictionNotices   EvictionNotice[]
+  coworkingBookings CoworkingBooking[]
+  hotelBookings     HotelBooking[]
+  dataSubscriptions DataSubscription[]
+  vehicles          Vehicle[]
+  eventTickets      EventTicket[]
+  communityPosts    CommunityPost[]
+  communityComments CommunityComment[]
+  surveyResponses   SurveyResponse[]
+  familyMembers     FamilyMember[]
+  documents         Document[]
+  ownedUnits        Unit[]             @relation("UnitOwner")
+  pets              Pet[]
+  emergencyContacts EmergencyContact[]
+  committeeRoles    CommitteeMember[]
+  votes             Vote[]
+  facilityBookings  FacilityBooking[]
+  hostInvitations   GuestInvitation[]  @relation("HostInvitations")
+  Booking           Booking[]
+
+  @@map("customers")
+}
+
+model Lead {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name       String
+  phone      String
+  email      String?
+  source     String  @default("ORGANIC")
+  campaignId String?
+  score      Int     @default(0)
+  status     String  @default("NEW")
+
+  assignedToId String?
+  agent        User?   @relation("LeadAssignedAgent", fields: [assignedToId], references: [id])
+
+  budgetMin Float?
+  budgetMax Float?
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+
+  sourceId   String?
+  leadSource LeadSource? @relation(fields: [sourceId], references: [id])
+
+  brokerLead    BrokerLead?
+  opportunities Opportunity[]
+
+  notes           LeadNote[]
+  activities      LeadActivity[]
+  siteVisits      SiteVisit[]
+  bookings        Booking[]
+  interestedUnits InterestedUnit[]
+
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  SalesExecutiveAssignment SalesExecutiveAssignment[]
+  Negotiation              Negotiation[]
+  Reservation              Reservation[]
+
+  @@map("leads")
+}
+
+model Opportunity {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId     String?
+  lead       Lead?    @relation(fields: [leadId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  stage         String    @default("DISCOVERY") // DISCOVERY, NEGOTIATION, WON, LOST
+  expectedValue Decimal?
+  closeDate     DateTime?
+
+  @@map("opportunities")
+}
+
+// ------------------------------------------------------
+// 8. MARKETPLACE CLOUD (Phase 3)
+// ------------------------------------------------------
+model Listing {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitId   String
+  unit     Unit   @relation(fields: [unitId], references: [id])
+
+  title       String
+  description String?
+  listedPrice Decimal
+  isPublished Boolean @default(false)
+  multimedia  String? // Images, VR URLs
+
+  @@map("listings")
+}
+
+// ------------------------------------------------------
+// 9. FINANCIAL ERP CLOUD (Phase 4)
+// ------------------------------------------------------
+model Invoice {
+  id             String        @id @default(uuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  salesBookingId String?
+  salesBooking   SalesBooking? @relation(fields: [salesBookingId], references: [id])
+
+  invoiceNumber String
+  amount        Decimal
+  taxAmount     Decimal
+  totalAmount   Decimal
+  status        String   @default("DRAFT") // DRAFT, ISSUED, PAID, PARTIAL, CANCELLED
+  dueDate       DateTime
+  issueDate     DateTime @default(now())
+
+  payments           Payment[]
+  rentRoll           RentRoll?
+  maintenanceBill    MaintenanceBill?
+  GoodsReceiptNote   GoodsReceiptNote? @relation(fields: [goodsReceiptNoteId], references: [id])
+  goodsReceiptNoteId String?
+
+  @@map("invoices")
+}
+
+model Payment {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoiceId  String
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  amount         Decimal
+  paymentMethod  String // WIRE, CARD, CHEQUE, UPI
+  transactionRef String?
+  status         String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  paymentDate    DateTime @default(now())
+
+  @@map("payments")
+}
+
+// ------------------------------------------------------
+// 10. LEGAL CLOUD (Phase 4)
+// ------------------------------------------------------
+model Contract {
+  id             String        @id @default(uuid())
+  tenantId       String
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  salesBookingId String?
+  salesBooking   SalesBooking? @relation(fields: [salesBookingId], references: [id])
+
+  type            String // SALE_AGREEMENT, LEASE, NDA
+  documentUrl     String?
+  eSignStatus     String    @default("DRAFT") // DRAFT, SENT, SIGNED
+  eSignEnvelopeId String?
+  validUntil      DateTime?
+
+  @@map("contracts")
+}
+
+model KycRecord {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String   @unique
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  documentType       String // PASSPORT, DRIVERS_LICENSE, NATIONAL_ID
+  documentNumber     String
+  documentUrl        String
+  verificationStatus String    @default("PENDING") // PENDING, VERIFIED, REJECTED
+  expiryDate         DateTime?
+
+  @@map("kyc_records")
+}
+
+// ------------------------------------------------------
+// 11. LEASING CLOUD (Phase 5)
+// ------------------------------------------------------
+model Lease {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitId     String
+  unit       Unit     @relation(fields: [unitId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  monthlyRent     Decimal
+  securityDeposit Decimal
+  startDate       DateTime
+  endDate         DateTime
+  status          String   @default("ACTIVE") // ACTIVE, EXPIRED, TERMINATED
+  autoRenew       Boolean  @default(false)
+
+  rentRolls       RentRoll[]
+  evictionNotices EvictionNotice[]
+  revenueShares   RevenueShare[]
+
+  @@map("leases")
+}
+
+model RentRoll {
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leaseId   String
+  lease     Lease   @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  invoiceId String  @unique
+  invoice   Invoice @relation(fields: [invoiceId], references: [id]) // One-to-one link to general ledger
+
+  billingMonth   String // e.g. "2026-08"
+  amountExpected Decimal
+
+  @@map("rent_rolls")
+}
+
+// ------------------------------------------------------
+// 12. SOCIETY ERP (Phase 5)
+// ------------------------------------------------------
+model Society {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String          @unique
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  name                   String
+  registrationNumber     String?
+  corpusFund             Decimal @default(0)
+  monthlyMaintenanceRate Decimal
+
+  maintenanceBills MaintenanceBill[]
+  complaints       Complaint[]
+  committeeMembers CommitteeMember[]
+  agmMeetings      AgmMeeting[]
+  polls            Poll[]
+
+  @@map("societies")
+}
+
+model MaintenanceBill {
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  societyId String
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  unitId    String
+  unit      Unit    @relation(fields: [unitId], references: [id])
+  invoiceId String  @unique
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+
+  billingPeriod String // e.g. "2026-08"
+  amount        Decimal
+  lineItems     MaintenanceBillLineItem[]
+
+  @@map("maintenance_bills")
+}
+
+model Complaint {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  societyId  String
+  society    Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  unitId     String
+  unit       Unit     @relation(fields: [unitId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  category    String // PLUMBING, ELECTRICAL, SECURITY, OTHER
+  description String
+  priority    String      @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status      String      @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  createdAt   DateTime    @default(now())
+  workOrders  WorkOrder[]
+
+  @@map("complaints")
+}
+
+// ------------------------------------------------------
+// 13. CONSTRUCTION ERP (Phase 6)
+// ------------------------------------------------------
+model BillOfQuantities {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  itemCode          String
+  description       String
+  unitOfMeasure     String
+  estimatedQuantity Decimal
+  estimatedUnitCost Decimal
+
+  @@map("boqs")
+}
+
+model Vendor {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name     String
+  taxId    String?
+  category String // MATERIAL, EQUIPMENT, SERVICES
+  status   String  @default("ACTIVE") // ACTIVE, BLACKLISTED
+
+  purchaseOrders       PurchaseOrder[]
+  maintenanceSchedules MaintenanceSchedule[]
+  disputeCases         DisputeCase[]
+  procurementBids      ProcurementBid[]
+  eventSponsorships    EventSponsorship[]
+  adPlacements         AdPlacement[]
+  wasteCollections     WasteCollectionRecord[]
+  vendorContracts      VendorContract[]
+  workOrders           WorkOrder[]
+  VendorKyc            VendorKyc?
+  VendorPerformance    VendorPerformance?
+
+  @@map("vendors")
+}
+
+model PurchaseOrder {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+  vendorId        String
+  vendor          Vendor          @relation(fields: [vendorId], references: [id])
+
+  poNumber              String               @unique
+  totalAmount           Decimal
+  status                String               @default("DRAFT") // DRAFT, APPROVED, ISSUED, PARTIAL_RECEIPT, FULFILLED
+  expectedDeliveryDate  DateTime?
+  createdAt             DateTime             @default(now())
+  PurchaseRequisition   PurchaseRequisition? @relation(fields: [purchaseRequisitionId], references: [id])
+  purchaseRequisitionId String?
+  PurchaseOrderItem     PurchaseOrderItem[]
+  GoodsReceiptNote      GoodsReceiptNote[]
+
+  @@map("purchase_orders")
+}
+
+model InventoryItem {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  itemCode        String
+  name            String
+  quantityOnHand  Decimal   @default(0)
+  unitOfMeasure   String
+  averageCost     Decimal   @default(0)
+  lastRestockDate DateTime?
+
+  warehouseInventory WarehouseInventory[]
+  procurementBids    ProcurementBid[]
+
+  @@map("inventory_items")
+}
+
+model Contractor {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name          String
+  trade         String // CIVIL, MEP, HVAC, FINISHING
+  contractValue Decimal?
+  status        String   @default("ACTIVE")
+
+  @@map("contractors")
+}
+
+// ------------------------------------------------------
+// 14. HRMS & EMPLOYEE CLOUD (Phase 7)
+// ------------------------------------------------------
+model Department {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name           String
+  costCenterCode String?
+
+  employees Employee[]
+
+  @@map("departments")
+}
+
+model Employee {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId       String?    @unique // Optional link to IAM User
+  user         User?      @relation(fields: [userId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  managerId    String?
+  manager      Employee?  @relation("EmployeeToManager", fields: [managerId], references: [id])
+
+  firstName     String
+  lastName      String
+  designation   String
+  baseSalary    Decimal
+  dateOfJoining DateTime
+  status        String   @default("ACTIVE") // ACTIVE, ON_LEAVE, TERMINATED
+
+  subordinates        Employee[]              @relation("EmployeeToManager")
+  attendances         Attendance[]
+  payrolls            Payroll[]
+  housekeepingTasks   HousekeepingTask[]
+  vehicles            Vehicle[]
+  wasteCollections    WasteCollectionRecord[]
+  inspections         FacilityInspection[]
+  workOrders          WorkOrder[]
+  PurchaseRequisition PurchaseRequisition[]
+
+  @@map("employees")
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  date     DateTime
+  clockIn  DateTime?
+  clockOut DateTime?
+  status   String    @default("PRESENT") // PRESENT, ABSENT, HALF_DAY, LEAVE
+  location String? // Geotag or IP
+
+  @@map("attendances")
+}
+
+model Payroll {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  payPeriod  String // e.g. "2026-08"
+  basicPay   Decimal
+  allowances Decimal @default(0)
+  deductions Decimal @default(0)
+  netPay     Decimal
+  status     String  @default("DRAFT") // DRAFT, PROCESSED, PAID
+
+  @@map("payrolls")
+}
+
+// ------------------------------------------------------
+// 15. FACILITY MANAGEMENT & SMART BUILDING (Phase 8)
+// ------------------------------------------------------
+model FacilityAsset {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name             String
+  category         String // HVAC, ELEVATOR, PUMP, GENERATOR
+  makeAndModel     String?
+  installationDate DateTime?
+  warrantyExpiry   DateTime?
+
+  maintenanceSchedules MaintenanceSchedule[]
+  amcContracts         AmcContract[]
+  inspections          FacilityInspection[]
+  depreciationRecords  DepreciationRecord[]
+  AssetCategory        AssetCategory?        @relation(fields: [assetCategoryId], references: [id])
+  assetCategoryId      String?
+  AssetDepreciation    AssetDepreciation?
+  MaintenancePlan      MaintenancePlan[]
+
+  @@map("facility_assets")
+}
+
+model MaintenanceSchedule {
+  id            String        @id @default(uuid())
+  assetId       String
+  facilityAsset FacilityAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  vendorId      String? // Optional: If handled by external contractor
+  vendor        Vendor?       @relation(fields: [vendorId], references: [id])
+
+  type              String // PREVENTATIVE, CORRECTIVE
+  scheduledDate     DateTime
+  status            String                 @default("PENDING") // PENDING, COMPLETED, OVERDUE
+  checklists        MaintenanceChecklist[]
+  MaintenancePlan   MaintenancePlan?       @relation(fields: [maintenancePlanId], references: [id])
+  maintenancePlanId String?
+
+  @@map("maintenance_schedules")
+}
+
+model VisitorLog {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unitId          String?
+  unit            Unit?           @relation(fields: [unitId], references: [id])
+  approvedById    String?
+  approvedBy      Customer?       @relation(fields: [approvedById], references: [id])
+
+  visitorName       String
+  purpose           String // GUEST, DELIVERY, SERVICE
+  entryTime         DateTime?
+  exitTime          DateTime?
+  status            String           @default("AWAITING_APPROVAL") // AWAITING_APPROVAL, APPROVED, DENIED, ENTERED, EXITED
+  vehiclePlate      String?
+  qrCode            String?          @unique
+  guestInvitationId String?
+  guestInvitation   GuestInvitation? @relation(fields: [guestInvitationId], references: [id])
+  deliveryLog       DeliveryLog?
+
+  @@map("visitor_logs")
+}
+
+model IotDevice {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unitId          String?
+  unit            Unit?           @relation(fields: [unitId], references: [id])
+
+  deviceType  String // SMART_LOCK, ENERGY_METER, CAMERA, BOOM_BARRIER
+  macAddress  String       @unique
+  status      String       @default("ONLINE") // ONLINE, OFFLINE, MAINTENANCE
+  lastPing    DateTime?
+  bimElements BIMElement[]
+
+  @@map("iot_devices")
+}
+
+// ------------------------------------------------------
+// 16. FINTECH & INVESTMENT CLOUD (Phase 9)
+// ------------------------------------------------------
+model InvestmentFund {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String          @unique
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  fundName    String
+  targetAUM   Decimal
+  currentAUM  Decimal @default(0)
+  totalShares Int
+  sharePrice  Decimal
+  status      String  @default("FUNDING") // FUNDING, CLOSED, LIQUIDATED
+
+  fractionalShares FractionalShare[]
+
+  @@map("investment_funds")
+}
+
+model Investor {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String   @unique
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  investorType  String  @default("RETAIL") // RETAIL, ACCREDITED, INSTITUTIONAL
+  riskProfile   String?
+  walletBalance Decimal @default(0)
+
+  fractionalShares FractionalShare[]
+  dividendPayouts  DividendPayout[]
+
+  @@map("investors")
+}
+
+model FractionalShare {
+  id             String         @id @default(uuid())
+  fundId         String
+  investmentFund InvestmentFund @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  investorId     String
+  investor       Investor       @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  quantityOwned        Int
+  averagePurchasePrice Decimal
+  acquisitionDate      DateTime @default(now())
+
+  dividendPayouts DividendPayout[]
+
+  @@map("fractional_shares")
+}
+
+model DividendPayout {
+  id              String          @id @default(uuid())
+  fundId          String
+  shareId         String
+  fractionalShare FractionalShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  investorId      String
+  investor        Investor        @relation(fields: [investorId], references: [id], onDelete: Cascade)
+
+  amountPerShare    Decimal
+  totalPayoutAmount Decimal
+  financialQuarter  String // e.g. "2026-Q1"
+  payoutDate        DateTime @default(now())
+  status            String   @default("PENDING") // PENDING, PROCESSING, PAID, FAILED
+
+  @@map("dividend_payouts")
+}
+
+// ------------------------------------------------------
+// 17. LEGAL & DISPUTE RESOLUTION CLOUD (Phase 10)
+// ------------------------------------------------------
+model DisputeCase {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Optional relations depending on the nature of the dispute
+  projectId       String?
+  propertyProject PropertyProject? @relation(fields: [projectId], references: [id])
+  customerId      String?
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  vendorId        String?
+  vendor          Vendor?          @relation(fields: [vendorId], references: [id])
+
+  caseNumber        String  @unique
+  title             String
+  category          String // LITIGATION, ARBITRATION, CONSUMER_COMPLAINT
+  status            String  @default("OPEN") // OPEN, IN_HEARINGS, SETTLED, CLOSED
+  financialExposure Decimal @default(0)
+
+  legalHearings LegalHearing[]
+
+  @@map("dispute_cases")
+}
+
+model LegalHearing {
+  id          String      @id @default(uuid())
+  caseId      String
+  disputeCase DisputeCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  courtOrForum String
+  hearingDate  DateTime
+  summaryNotes String?
+  outcome      String   @default("PENDING") // PENDING, ADJOURNED, JUDGMENT_PASSED
+
+  @@map("legal_hearings")
+}
+
+model EvictionNotice {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leaseId    String
+  lease      Lease    @relation(fields: [leaseId], references: [id])
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  noticeType   String // 30_DAY_PAY_OR_QUIT, BREACH_OF_CONTRACT
+  issueDate    DateTime @default(now())
+  deadlineDate DateTime
+  status       String   @default("SERVED") // SERVED, COMPLIED, ESCALATED_TO_COURT
+
+  @@map("eviction_notices")
+}
+
+// ------------------------------------------------------
+// 18. ARTIFICIAL INTELLIGENCE (AI) PLATFORM (Phase 11)
+// ------------------------------------------------------
+model AiModel {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  modelName   String // e.g. "gpt-4-turbo", "custom-churn-v1"
+  provider    String // OPENAI, ANTHROPIC, CUSTOM
+  endpointUrl String?
+  status      String  @default("ACTIVE") // ACTIVE, DEPRECATED
+
+  interactionLogs   AiInteractionLog[]
+  documentTemplates AiDocumentTemplate[]
+
+  @@map("ai_models")
+}
+
+model AiInteractionLog {
+  id       String  @id @default(uuid())
+  tenantId String
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  modelId  String
+  aiModel  AiModel @relation(fields: [modelId], references: [id])
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id])
+
+  promptText   String
+  responseText String
+  tokensUsed   Int      @default(0)
+  timestamp    DateTime @default(now())
+  moduleSource String // CRM, LEASING, LEGAL, HELPDESK
+
+  @@map("ai_interaction_logs")
+}
+
+model AiDocumentTemplate {
+  id       String  @id @default(uuid())
+  tenantId String
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  modelId  String
+  aiModel  AiModel @relation(fields: [modelId], references: [id])
+
+  templateName      String
+  systemPrompt      String
+  requiredVariables String // e.g. "{tenantName}, {rentAmount}"
+
+  @@map("ai_document_templates")
+}
+
+// ------------------------------------------------------
+// 19. SMART CITY & MASTER DEVELOPMENT CLOUD (Phase 12)
+// ------------------------------------------------------
+model MasterPlan {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name              String
+  city              String
+  state             String
+  totalAreaSqFt     Decimal
+  masterCoordinates String? // GeoJSON string
+
+  landPlots       LandPlot[]
+  municipalAssets MunicipalAsset[]
+
+  @@map("master_plans")
+}
+
+model LandPlot {
+  id           String     @id @default(uuid())
+  masterPlanId String
+  masterPlan   MasterPlan @relation(fields: [masterPlanId], references: [id], onDelete: Cascade)
+
+  plotNumber      String
+  zoningType      String // RESIDENTIAL, COMMERCIAL, MIXED, UTILITY, GREEN_SPACE
+  areaSqFt        Decimal
+  plotCoordinates String? // GeoJSON string
+
+  propertyProjects PropertyProject[]
+
+  @@map("land_plots")
+}
+
+model MunicipalAsset {
+  id           String     @id @default(uuid())
+  masterPlanId String
+  masterPlan   MasterPlan @relation(fields: [masterPlanId], references: [id], onDelete: Cascade)
+
+  assetType         String // ROAD, SEWAGE_PLANT, SUBSTATION, PARK
+  name              String
+  maintenanceStatus String @default("ACTIVE") // ACTIVE, REPAIR_NEEDED
+
+  @@map("municipal_assets")
+}
+
+// ------------------------------------------------------
+// 20. CO-WORKING ERP & FLEXIBLE SPACES CLOUD (Phase 13)
+// ------------------------------------------------------
+model CoworkingSpace {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitId   String @unique
+  unit     Unit   @relation(fields: [unitId], references: [id])
+
+  brandName     String
+  totalCapacity Int
+  amenities     String? // WIFI, COFFEE, PRINTING
+
+  hotDesks     HotDesk[]
+  meetingRooms MeetingRoom[]
+  bookings     CoworkingBooking[]
+
+  @@map("coworking_spaces")
+}
+
+model HotDesk {
+  id             String         @id @default(uuid())
+  coworkingId    String
+  coworkingSpace CoworkingSpace @relation(fields: [coworkingId], references: [id], onDelete: Cascade)
+
+  deskNumber  String
+  type        String // FLEXIBLE, DEDICATED
+  dailyRate   Decimal
+  monthlyRate Decimal
+
+  bookings CoworkingBooking[]
+
+  @@map("hot_desks")
+}
+
+model MeetingRoom {
+  id             String         @id @default(uuid())
+  coworkingId    String
+  coworkingSpace CoworkingSpace @relation(fields: [coworkingId], references: [id], onDelete: Cascade)
+
+  roomName     String
+  capacity     Int
+  hourlyRate   Decimal
+  hasProjector Boolean @default(false)
+
+  bookings CoworkingBooking[]
+
+  @@map("meeting_rooms")
+}
+
+model CoworkingBooking {
+  id             String         @id @default(uuid())
+  coworkingId    String
+  coworkingSpace CoworkingSpace @relation(fields: [coworkingId], references: [id], onDelete: Cascade)
+  customerId     String
+  customer       Customer       @relation(fields: [customerId], references: [id])
+  hotDeskId      String?
+  hotDesk        HotDesk?       @relation(fields: [hotDeskId], references: [id])
+  meetingRoomId  String?
+  meetingRoom    MeetingRoom?   @relation(fields: [meetingRoomId], references: [id])
+
+  startTime   DateTime
+  endTime     DateTime
+  totalAmount Decimal
+  status      String   @default("CONFIRMED") // CONFIRMED, CANCELLED, COMPLETED
+
+  @@map("coworking_bookings")
+}
+
+// ------------------------------------------------------
+// 21. HOSPITALITY & HOTEL ERP CLOUD (Phase 14)
+// ------------------------------------------------------
+model HotelProperty {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String          @unique
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  starRating   String // 1, 2, 3, 4, 5
+  checkInTime  String @default("14:00")
+  checkOutTime String @default("11:00")
+
+  rooms    HotelRoom[]
+  bookings HotelBooking[]
+
+  @@map("hotel_properties")
+}
+
+model HotelRoom {
+  id            String        @id @default(uuid())
+  hotelId       String
+  hotelProperty HotelProperty @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  unitId        String        @unique
+  unit          Unit          @relation(fields: [unitId], references: [id])
+
+  roomType       String // DELUXE, SUITE, STANDARD
+  nightlyRate    Decimal
+  cleaningStatus String  @default("CLEAN") // CLEAN, DIRTY, INSPECTED, OUT_OF_ORDER
+
+  bookings          HotelBooking[]
+  housekeepingTasks HousekeepingTask[]
+
+  @@map("hotel_rooms")
+}
+
+model HotelBooking {
+  id            String        @id @default(uuid())
+  hotelId       String
+  hotelProperty HotelProperty @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  roomId        String
+  hotelRoom     HotelRoom     @relation(fields: [roomId], references: [id])
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  numberOfGuests  Int
+  totalStayAmount Decimal
+  status          String   @default("CONFIRMED") // CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED
+
+  @@map("hotel_bookings")
+}
+
+model HousekeepingTask {
+  id           String    @id @default(uuid())
+  roomId       String
+  hotelRoom    HotelRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  assignedToId String?
+  assignedTo   Employee? @relation(fields: [assignedToId], references: [id])
+
+  taskType      String // TURNDOWN, CHECKOUT_CLEAN, DEEP_CLEAN
+  status        String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  scheduledFor  DateTime
+  cleaningNotes String?
+
+  @@map("housekeeping_tasks")
+}
+
+// ------------------------------------------------------
+// 22. MALL & RETAIL MANAGEMENT CLOUD (Phase 15)
+// ------------------------------------------------------
+model MallProperty {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String          @unique
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  totalStores    Int
+  operatingHours String @default("10:00 - 22:00")
+
+  stores       RetailStore[]
+  footfallLogs FootfallLog[]
+
+  @@map("mall_properties")
+}
+
+model RetailStore {
+  id           String       @id @default(uuid())
+  mallId       String
+  mallProperty MallProperty @relation(fields: [mallId], references: [id], onDelete: Cascade)
+  unitId       String       @unique
+  unit         Unit         @relation(fields: [unitId], references: [id])
+
+  storeCategory String // APPAREL, F&B, ENTERTAINMENT, ELECTRONICS
+  locationTier  String // PREMIUM_CORRIDOR, STANDARD
+
+  footfallLogs FootfallLog[]
+
+  @@map("retail_stores")
+}
+
+model FootfallLog {
+  id           String        @id @default(uuid())
+  mallId       String?
+  mallProperty MallProperty? @relation(fields: [mallId], references: [id], onDelete: Cascade)
+  storeId      String?
+  retailStore  RetailStore?  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  timestamp    DateTime @default(now())
+  visitorCount Int
+
+  @@map("footfall_logs")
+}
+
+model RevenueShare {
+  id      String @id @default(uuid())
+  leaseId String
+  lease   Lease  @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  reportMonth     String // YYYY-MM
+  grossSales      Decimal
+  revenueSharePct Decimal
+  calculatedRent  Decimal
+  status          String  @default("SUBMITTED") // SUBMITTED, INVOICED, PAID
+
+  @@map("revenue_shares")
+}
+
+// ------------------------------------------------------
+// 23. SUPPLY CHAIN & PROCUREMENT CLOUD (Phase 16)
+// ------------------------------------------------------
+model Warehouse {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name            String
+  locationAddress String
+  capacityVolume  Decimal
+
+  inventory            WarehouseInventory[]
+  GoodsReceiptNote     GoodsReceiptNote[]
+  WarehouseZone        WarehouseZone[]
+  InventoryTransaction InventoryTransaction[]
+  InventoryLedger      InventoryLedger[]
+
+  @@map("warehouses")
+}
+
+model WarehouseInventory {
+  id            String        @id @default(uuid())
+  warehouseId   String
+  warehouse     Warehouse     @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  itemId        String
+  inventoryItem InventoryItem @relation(fields: [itemId], references: [id])
+
+  quantityOnHand   Decimal @default(0)
+  minimumThreshold Decimal @default(0)
+
+  @@map("warehouse_inventory")
+}
+
+model ProcurementBid {
+  id            String        @id @default(uuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendorId      String
+  vendor        Vendor        @relation(fields: [vendorId], references: [id])
+  itemId        String
+  inventoryItem InventoryItem @relation(fields: [itemId], references: [id])
+
+  bidPricePerUnit      Decimal
+  proposedDeliveryDate DateTime
+  status               String   @default("SUBMITTED") // SUBMITTED, SHORTLISTED, WON, LOST
+
+  @@map("procurement_bids")
+}
+
+// ------------------------------------------------------
+// 24. PROPERTY VALUATION & DATA BROKERAGE CLOUD (Phase 17)
+// ------------------------------------------------------
+model ValuationReport {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitId   String
+  unit     Unit   @relation(fields: [unitId], references: [id])
+
+  generatedBy     String // AVM, HUMAN_APPRAISER
+  estimatedValue  Decimal
+  confidenceScore Decimal? // 0-100
+  valuationDate   DateTime @default(now())
+  status          String   @default("FINAL") // DRAFT, FINAL, EXPIRED
+
+  comparables ComparableProperty[]
+
+  @@map("valuation_reports")
+}
+
+model ComparableProperty {
+  id              String          @id @default(uuid())
+  valuationId     String
+  valuationReport ValuationReport @relation(fields: [valuationId], references: [id], onDelete: Cascade)
+
+  internalUnitId  String?
+  externalAddress String?
+  salePrice       Decimal
+  saleDate        DateTime
+  similarityScore Decimal? // 0-100
+
+  @@map("comparable_properties")
+}
+
+model DataSubscription {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscriberId String
+  subscriber   Customer @relation(fields: [subscriberId], references: [id])
+
+  tier         String // BASIC, PREMIUM, ENTERPRISE
+  monthlyFee   Decimal
+  apiKey       String   @unique
+  apiCallsUsed Int      @default(0)
+  expiresAt    DateTime
+
+  @@map("data_subscriptions")
+}
+
+// ------------------------------------------------------
+// 25. ENERGY TRADING & SUSTAINABILITY CLOUD (Phase 18)
+// ------------------------------------------------------
+model EnergyGrid {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  gridType      String // SOLAR_ARRAY, WIND_TURBINE, MAIN_GRID
+  maxCapacityKw Decimal
+  status        String  @default("ACTIVE") // ACTIVE, MAINTENANCE, DECOMMISSIONED
+
+  usageLogs EnergyUsageLog[]
+
+  @@map("energy_grids")
+}
+
+model EnergyUsageLog {
+  id              String           @id @default(uuid())
+  gridId          String?
+  energyGrid      EnergyGrid?      @relation(fields: [gridId], references: [id])
+  projectId       String?
+  propertyProject PropertyProject? @relation(fields: [projectId], references: [id])
+
+  timestamp   DateTime @default(now())
+  kwhProduced Decimal  @default(0)
+  kwhConsumed Decimal  @default(0)
+
+  @@map("energy_usage_logs")
+}
+
+model CarbonCredit {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  carbonOffsetTons  Decimal
+  certificateNumber String   @unique
+  issueDate         DateTime @default(now())
+  status            String   @default("AVAILABLE") // AVAILABLE, TRADED, RETIRED
+
+  @@map("carbon_credits")
+}
+
+// ------------------------------------------------------
+// 26. PARKING & FLEET MANAGEMENT CLOUD (Phase 19)
+// ------------------------------------------------------
+model ParkingFacility {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  name          String
+  totalCapacity Int
+  hourlyRate    Decimal @default(0)
+
+  slots    ParkingSlot[]
+  sessions ParkingSession[]
+
+  @@map("parking_facilities")
+}
+
+model ParkingSlot {
+  id              String          @id @default(uuid())
+  facilityId      String
+  parkingFacility ParkingFacility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  unitId          String?         @unique
+  unit            Unit?           @relation(fields: [unitId], references: [id])
+
+  slotNumber String
+  slotType   String  @default("STANDARD") // STANDARD, EV_CHARGING, HANDICAP
+  isOccupied Boolean @default(false)
+
+  sessions ParkingSession[]
+
+  @@map("parking_slots")
+}
+
+model Vehicle {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+
+  licensePlate String  @unique
+  vehicleMake  String?
+  vehicleModel String?
+  isElectric   Boolean @default(false)
+
+  sessions ParkingSession[]
+
+  @@map("vehicles")
+}
+
+model ParkingSession {
+  id              String          @id @default(uuid())
+  facilityId      String
+  parkingFacility ParkingFacility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  slotId          String?
+  parkingSlot     ParkingSlot?    @relation(fields: [slotId], references: [id])
+  vehicleId       String?
+  vehicle         Vehicle?        @relation(fields: [vehicleId], references: [id])
+
+  licensePlateImage String?
+  entryTime         DateTime  @default(now())
+  exitTime          DateTime?
+  totalFee          Decimal   @default(0)
+  status            String    @default("ACTIVE") // ACTIVE, COMPLETED
+
+  @@map("parking_sessions")
+}
+
+// ------------------------------------------------------
+// 27. EVENT & EXHIBITION MANAGEMENT CLOUD (Phase 20)
+// ------------------------------------------------------
+model EventSpace {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  name             String
+  maxCapacity      Int
+  hourlyRentalRate Decimal @default(0)
+
+  events           Event[]
+  facilityBookings FacilityBooking[]
+
+  @@map("event_spaces")
+}
+
+model Event {
+  id         String     @id @default(uuid())
+  spaceId    String
+  eventSpace EventSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  name              String
+  startTime         DateTime
+  endTime           DateTime
+  expectedAttendees Int      @default(0)
+  status            String   @default("SCHEDULED") // SCHEDULED, ONGOING, COMPLETED, CANCELLED
+
+  tickets      EventTicket[]
+  sponsorships EventSponsorship[]
+
+  @@map("events")
+}
+
+model EventTicket {
+  id         String   @id @default(uuid())
+  eventId    String
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  ticketType String  @default("GENERAL") // GENERAL, VIP
+  price      Decimal @default(0)
+  qrCode     String  @unique
+  isScanned  Boolean @default(false)
+
+  @@map("event_tickets")
+}
+
+model EventSponsorship {
+  id       String @id @default(uuid())
+  eventId  String
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id])
+
+  sponsorshipTier String // PLATINUM, GOLD, SILVER
+  amountPaid      Decimal
+  status          String  @default("PENDING") // PENDING, CONFIRMED
+
+  @@map("event_sponsorships")
+}
+
+// ------------------------------------------------------
+// 28. REAL ESTATE MARKETING & ADTECH CLOUD (Phase 21)
+// ------------------------------------------------------
+model MarketingCampaign {
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String?
+  propertyProject PropertyProject? @relation(fields: [projectId], references: [id])
+
+  name        String
+  totalBudget Decimal   @default(0)
+  spentBudget Decimal   @default(0)
+  startDate   DateTime
+  endDate     DateTime?
+  status      String    @default("DRAFT") // DRAFT, ACTIVE, COMPLETED
+
+  leadSources LeadSource[]
+
+  @@map("marketing_campaigns")
+}
+
+model LeadSource {
+  id         String            @id @default(uuid())
+  campaignId String
+  campaign   MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  name      String // Google Ads, Facebook, Walk-in
+  medium    String // DIGITAL, PRINT, BILLBOARD
+  utmSource String?
+
+  leads Lead[]
+
+  @@map("lead_sources")
+}
+
+model AdPlacement {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  name              String // Elevator Screen 1
+  format            String // DIGITAL_DISPLAY, PRINT_STATIC
+  monthlyRentalRate Decimal
+  currentRenterId   String?
+  currentRenter     Vendor?   @relation(fields: [currentRenterId], references: [id])
+  rentedUntil       DateTime?
+
+  @@map("ad_placements")
+}
+
+// ------------------------------------------------------
+// 29. WASTE MANAGEMENT & SMART ENVIRONMENT CLOUD (Phase 22)
+// ------------------------------------------------------
+model WasteBin {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  locationDescription String
+  wasteType           String // GENERAL, RECYCLING, HAZARDOUS
+  fillLevelPercentage Int    @default(0)
+  status              String @default("ACTIVE") // ACTIVE, MAINTENANCE
+
+  collections WasteCollectionRecord[]
+
+  @@map("waste_bins")
+}
+
+model WasteCollectionRecord {
+  id         String    @id @default(uuid())
+  binId      String
+  wasteBin   WasteBin  @relation(fields: [binId], references: [id], onDelete: Cascade)
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+  vendorId   String?
+  vendor     Vendor?   @relation(fields: [vendorId], references: [id])
+
+  collectionTime    DateTime @default(now())
+  estimatedWeightKg Decimal
+
+  @@map("waste_collection_records")
+}
+
+model RecyclingMetric {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  year                    Int
+  month                   Int
+  totalGeneralWasteKg     Decimal @default(0)
+  totalRecycledWasteKg    Decimal @default(0)
+  diversionRatePercentage Decimal @default(0)
+
+  @@map("recycling_metrics")
+}
+
+// ------------------------------------------------------
+// 30. COMMUNITY & SOCIAL ENGAGEMENT CLOUD (Phase 23)
+// ------------------------------------------------------
+model CommunityPost {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId        String
+  author          Customer        @relation(fields: [authorId], references: [id])
+
+  postType  String   @default("GENERAL") // ANNOUNCEMENT, MARKETPLACE, GENERAL
+  content   String
+  likeCount Int      @default(0)
+  createdAt DateTime @default(now())
+  isPinned  Boolean  @default(false)
+
+  comments CommunityComment[]
+
+  @@map("community_posts")
+}
+
+model CommunityComment {
+  id       String        @id @default(uuid())
+  postId   String
+  post     CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String
+  author   Customer      @relation(fields: [authorId], references: [id])
+
+  content   String
+  createdAt DateTime @default(now())
+
+  @@map("community_comments")
+}
+
+model FeedbackSurvey {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  title       String
+  description String?
+  expiresAt   DateTime
+  isActive    Boolean  @default(true)
+
+  responses SurveyResponse[]
+
+  @@map("feedback_surveys")
+}
+
+model SurveyResponse {
+  id         String         @id @default(uuid())
+  surveyId   String
+  survey     FeedbackSurvey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer       @relation(fields: [customerId], references: [id])
+
+  ratingScale  Int // 1 to 5
+  textFeedback String?
+  submittedAt  DateTime @default(now())
+
+  @@map("survey_responses")
+}
+
+// ------------------------------------------------------
+// 31. REAL ESTATE ANALYTICS & BI CLOUD (Phase 24)
+// ------------------------------------------------------
+model BIDashboard {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+
+  name         String
+  layoutConfig String // JSON string
+  isShared     Boolean @default(false)
+
+  @@map("bi_dashboards")
+}
+
+model BIMetric {
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String?
+  propertyProject PropertyProject? @relation(fields: [projectId], references: [id])
+
+  metricName   String // OCCUPANCY_RATE, MONTHLY_REV, CAC
+  metricValue  Decimal
+  unit         String // PERCENTAGE, USD, COUNT
+  calculatedAt DateTime @default(now())
+
+  @@map("bi_metrics")
+}
+
+model ReportExport {
+  id            String @id @default(uuid())
+  tenantId      String
+  tenant        Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  generatedById String
+  generatedBy   User   @relation(fields: [generatedById], references: [id])
+
+  reportName  String
+  fileUrl     String?
+  generatedAt DateTime @default(now())
+  status      String   @default("PENDING") // PENDING, SUCCESS, FAILED
+
+  @@map("report_exports")
+}
+
+// ------------------------------------------------------
+// 32. MULTI-BROKERAGE & AGENCY CLOUD (Phase 25)
+// ------------------------------------------------------
+model BrokerageAgency {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  agencyName         String
+  tradeLicenseNumber String
+  status             String @default("ACTIVE") // ACTIVE, PENDING, SUSPENDED
+
+  agents BrokerAgent[]
+
+  @@map("brokerage_agencies")
+}
+
+model BrokerAgent {
+  id       String          @id @default(uuid())
+  agencyId String
+  agency   BrokerageAgency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  fullName            String
+  email               String  @unique
+  phoneNumber         String
+  brokerLicenseNumber String
+  isVerified          Boolean @default(false)
+
+  leads BrokerLead[]
+
+  @@map("broker_agents")
+}
+
+model CommissionStructure {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name           String
+  percentageRate Decimal
+  flatFee        Decimal?
+  isActive       Boolean  @default(true)
+
+  @@map("commission_structures")
+}
+
+model BrokerLead {
+  id      String      @id @default(uuid())
+  agentId String
+  agent   BrokerAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  leadId  String?     @unique
+  lead    Lead?       @relation(fields: [leadId], references: [id])
+
+  registeredAt DateTime @default(now())
+  expiresAt    DateTime
+  status       String   @default("PROTECTED") // PROTECTED, EXPIRED, CONVERTED
+
+  @@map("broker_leads")
+}
+
+// ------------------------------------------------------
+// 33. BIM & DIGITAL TWIN CLOUD (Phase 26)
+// ------------------------------------------------------
+model BIMModel {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  modelName    String
+  fileUrl      String
+  viewerConfig String? // JSON configuration
+  uploadedAt   DateTime @default(now())
+
+  elements BIMElement[]
+
+  @@map("bim_models")
+}
+
+model BIMElement {
+  id      String   @id @default(uuid())
+  modelId String
+  model   BIMModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  elementGuid String
+  elementType String // HVAC, PUMP, DOOR
+  iotDeviceId String?
+  iotDevice   IotDevice? @relation(fields: [iotDeviceId], references: [id])
+
+  digitalTwinState DigitalTwinState?
+
+  @@map("bim_elements")
+}
+
+model DigitalTwinState {
+  id        String     @id @default(uuid())
+  elementId String     @unique
+  element   BIMElement @relation(fields: [elementId], references: [id], onDelete: Cascade)
+
+  statusColor  String   @default("GREEN") // GREEN, YELLOW, RED
+  lastPingData String? // JSON string
+  updatedAt    DateTime @default(now())
+
+  @@map("digital_twin_states")
+}
+
+// ------------------------------------------------------
+// 34. DEVELOPER API & THIRD-PARTY APP STORE (Phase 27)
+// ------------------------------------------------------
+model ApiApplication {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  appName        String
+  developerEmail String
+  description    String?
+  isActive       Boolean @default(true)
+
+  apiKeys  ApiKey[]
+  webhooks WebhookSubscription[]
+
+  @@map("api_applications")
+}
+
+model ApiKey {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   ApiApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  hashedKey  String    @unique
+  scopes     String // e.g., "read:finance,write:crm"
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@map("api_keys")
+}
+
+model WebhookSubscription {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   ApiApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  eventType   String // e.g., "lease.created", "invoice.paid"
+  targetUrl   String
+  secretToken String?
+  isActive    Boolean @default(true)
+
+  @@map("webhook_subscriptions")
+}
+
+// ------------------------------------------------------
+// 35. GLOBAL SETTINGS & AUDIT COMPLIANCE CLOUD (Phase 28)
+// ------------------------------------------------------
+model SystemSetting {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  settingKey   String   @unique
+  settingValue String
+  updatedAt    DateTime @default(now())
+
+  @@map("system_settings")
+}
+
+model CompliancePolicy {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  policyName     String
+  regulatoryBody String // e.g., "EU", "RERA"
+  isActive       Boolean @default(true)
+
+  retentionRules DataRetentionRule[]
+
+  @@map("compliance_policies")
+}
+
+model DataRetentionRule {
+  id       String           @id @default(uuid())
+  policyId String
+  policy   CompliancePolicy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  targetTable   String
+  retentionDays Int
+  actionType    String // ANONYMIZE, DELETE
+  isEnabled     Boolean @default(true)
+
+  @@map("data_retention_rules")
+}
+
+// ------------------------------------------------------
+// 36. PROPERTY OPERATIONS CLOUD (Phase 6)
+// ------------------------------------------------------
+model FamilyMember {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  firstName     String
+  lastName      String
+  relation      String // SPOUSE, CHILD, PARENT
+  dateOfBirth   DateTime?
+  contactNumber String?
+
+  @@map("family_members")
+}
+
+model Document {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Polymorphic-like associations
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  unitId     String?
+  unit       Unit?     @relation(fields: [unitId], references: [id])
+
+  title        String
+  documentType String // AGREEMENT, KYC, REGISTRY, NOC
+  fileUrl      String
+  version      Int       @default(1)
+  expiryDate   DateTime?
+  status       String    @default("ACTIVE") // ACTIVE, EXPIRED, ARCHIVED
+  createdAt    DateTime  @default(now())
+
+  @@map("documents")
+}
+
+model WorkOrder {
+  id          String     @id @default(uuid())
+  tenantId    String
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  complaintId String?
+  complaint   Complaint? @relation(fields: [complaintId], references: [id])
+
+  assignedVendorId String?
+  vendor           Vendor?   @relation(fields: [assignedVendorId], references: [id])
+  assignedTechId   String?
+  technician       Employee? @relation(fields: [assignedTechId], references: [id])
+
+  title         String
+  description   String
+  priority      String    @default("MEDIUM")
+  status        String    @default("CREATED") // CREATED, APPROVED, IN_PROGRESS, COMPLETED, CANCELLED
+  estimatedCost Decimal   @default(0)
+  actualCost    Decimal   @default(0)
+  scheduledDate DateTime?
+  completedDate DateTime?
+
+  @@map("work_orders")
+}
+
+model VendorContract {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  contractTitle     String
+  startDate         DateTime
+  endDate           DateTime
+  contractValue     Decimal
+  performanceRating Decimal? // 1-5
+  status            String   @default("ACTIVE") // ACTIVE, EXPIRED, TERMINATED
+
+  @@map("vendor_contracts")
+}
+
+model AmcContract {
+  id              String        @id @default(uuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  facilityAssetId String
+  facilityAsset   FacilityAsset @relation(fields: [facilityAssetId], references: [id], onDelete: Cascade)
+
+  providerName  String
+  startDate     DateTime
+  endDate       DateTime
+  cost          Decimal
+  visitsPerYear Int      @default(0)
+
+  @@map("amc_contracts")
+}
+
+model FacilityInspection {
+  id              String        @id @default(uuid())
+  tenantId        String
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  facilityAssetId String
+  facilityAsset   FacilityAsset @relation(fields: [facilityAssetId], references: [id], onDelete: Cascade)
+  inspectorId     String?
+  inspector       Employee?     @relation(fields: [inspectorId], references: [id])
+
+  inspectionDate DateTime @default(now())
+  result         String // PASS, FAIL, MAINTENANCE_REQUIRED
+  notes          String?
+
+  @@map("facility_inspections")
+}
+
+model DepreciationRecord {
+  id              String        @id @default(uuid())
+  facilityAssetId String
+  facilityAsset   FacilityAsset @relation(fields: [facilityAssetId], references: [id], onDelete: Cascade)
+
+  year               Int
+  depreciationAmount Decimal
+  currentValue       Decimal
+
+  @@map("depreciation_records")
+}
+
+model MaintenanceChecklist {
+  id         String              @id @default(uuid())
+  tenantId   String
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  scheduleId String
+  schedule   MaintenanceSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  name   String
+  status String @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+
+  tasks MaintenanceTask[]
+
+  @@map("maintenance_checklists")
+}
+
+model MaintenanceTask {
+  id          String               @id @default(uuid())
+  tenantId    String
+  tenant      Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  checklistId String
+  checklist   MaintenanceChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  taskDescription String
+  isCompleted     Boolean   @default(false)
+  completedAt     DateTime?
+
+  @@map("maintenance_tasks")
+}
+
+// ------------------------------------------------------
+// 37. SOCIETY MANAGEMENT CLOUD (Phase 7)
+// ------------------------------------------------------
+model CommitteeMember {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  societyId  String
+  society    Society  @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  role          String // PRESIDENT, SECRETARY, TREASURER, MEMBER
+  termStartDate DateTime
+  termEndDate   DateTime?
+  status        String    @default("ACTIVE") // ACTIVE, RESIGNED, COMPLETED
+
+  @@map("committee_members")
+}
+
+model Pet {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  name            String
+  species         String // DOG, CAT, BIRD
+  breed           String?
+  vaccinationDate DateTime?
+
+  @@map("pets")
+}
+
+model EmergencyContact {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  name         String
+  relationship String
+  phoneNumber  String
+
+  @@map("emergency_contacts")
+}
+
+model GuestInvitation {
+  id       String   @id @default(uuid())
+  tenantId String
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  hostId   String
+  host     Customer @relation("HostInvitations", fields: [hostId], references: [id], onDelete: Cascade)
+
+  guestName    String
+  expectedDate DateTime
+  qrCode       String   @unique
+  status       String   @default("VALID") // VALID, USED, EXPIRED
+
+  visitorLogs VisitorLog[]
+
+  @@map("guest_invitations")
+}
+
+model DeliveryLog {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  visitorLogId String     @unique
+  visitorLog   VisitorLog @relation(fields: [visitorLogId], references: [id], onDelete: Cascade)
+
+  deliveryCompany    String
+  packageCount       Int     @default(1)
+  receivedBySecurity Boolean @default(false)
+
+  @@map("delivery_logs")
+}
+
+model MaintenanceBillLineItem {
+  id                String          @id @default(uuid())
+  maintenanceBillId String
+  maintenanceBill   MaintenanceBill @relation(fields: [maintenanceBillId], references: [id], onDelete: Cascade)
+
+  description String // COMMON_AREA, SINKING_FUND, PARKING, WATER
+  amount      Decimal
+
+  @@map("maintenance_bill_line_items")
+}
+
+model FacilityBooking {
+  id         String     @id @default(uuid())
+  tenantId   String
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  facilityId String
+  facility   EventSpace @relation(fields: [facilityId], references: [id])
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id])
+
+  startTime DateTime
+  endTime   DateTime
+  totalFee  Decimal  @default(0)
+  status    String   @default("PENDING_APPROVAL") // PENDING_APPROVAL, APPROVED, REJECTED, CANCELLED
+
+  @@map("facility_bookings")
+}
+
+model AgmMeeting {
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  societyId String
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  title       String
+  meetingDate DateTime
+  meetingUrl  String?
+  status      String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, CONCLUDED
+  minutesUrl  String?
+
+  @@map("agm_meetings")
+}
+
+model Poll {
+  id        String  @id @default(uuid())
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  societyId String
+  society   Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  expiresAt   DateTime
+  status      String   @default("ACTIVE") // ACTIVE, CLOSED
+
+  options PollOption[]
+  votes   Vote[]
+
+  @@map("polls")
+}
+
+model PollOption {
+  id     String @id @default(uuid())
+  pollId String
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  optionText String
+
+  votes Vote[]
+
+  @@map("poll_options")
+}
+
+model Vote {
+  id         String     @id @default(uuid())
+  pollId     String
+  poll       Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId   String
+  option     PollOption @relation(fields: [optionId], references: [id])
+  customerId String
+  customer   Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  votedAt DateTime @default(now())
+
+  @@unique([pollId, customerId])
+  @@map("votes")
+}
+
+// ------------------------------------------------------
+// 38. PROCUREMENT & INVENTORY CLOUD (Phase 9)
+// ------------------------------------------------------
+
+model VendorKyc {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendorId String @unique
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  gstNumber       String?
+  panNumber       String?
+  bankName        String?
+  accountNumber   String?
+  ifscCode        String?
+  insuranceDocUrl String?
+  kycStatus       String  @default("PENDING") // PENDING, APPROVED, REJECTED
+
+  @@map("vendor_kycs")
+}
+
+model VendorPerformance {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendorId String @unique
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  slaComplianceScore Float @default(0)
+  avgResponseTime    Float @default(0) // in hours
+  qualityRating      Float @default(0) // 1-5 scale
+  residentFeedback   Float @default(0) // 1-5 scale
+
+  @@map("vendor_performances")
+}
+
+model PurchaseRequisition {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  requesterId String
+  requester   Employee @relation(fields: [requesterId], references: [id])
+  department  String
+  status      String   @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+  createdAt   DateTime @default(now())
+
+  items          PurchaseRequisitionItem[]
+  purchaseOrders PurchaseOrder[]
+
+  @@map("purchase_requisitions")
+}
+
+model PurchaseRequisitionItem {
+  id                  String              @id @default(uuid())
+  prId                String
+  purchaseRequisition PurchaseRequisition @relation(fields: [prId], references: [id], onDelete: Cascade)
+
+  itemMasterId   String
+  itemMaster     ItemMaster @relation(fields: [itemMasterId], references: [id])
+  quantity       Int
+  estimatedPrice Decimal
+  BoqItem        BoqItem?   @relation(fields: [boqItemId], references: [id])
+  boqItemId      String?
+
+  @@map("purchase_requisition_items")
+}
+
+model PurchaseOrderItem {
+  id            String        @id @default(uuid())
+  poId          String
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+
+  itemMasterId String
+  itemMaster   ItemMaster @relation(fields: [itemMasterId], references: [id])
+  quantity     Int
+  unitPrice    Decimal
+
+  @@map("purchase_order_items")
+}
+
+model GoodsReceiptNote {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  poId          String
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+  warehouseId   String
+  warehouse     Warehouse     @relation(fields: [warehouseId], references: [id])
+
+  status      String   @default("RECEIVED") // RECEIVED, PARTIAL, QUALITY_CHECK_FAILED
+  receiptDate DateTime @default(now())
+
+  items    GoodsReceiptNoteItem[]
+  invoices Invoice[]
+
+  @@map("goods_receipt_notes")
+}
+
+model GoodsReceiptNoteItem {
+  id               String           @id @default(uuid())
+  grnId            String
+  goodsReceiptNote GoodsReceiptNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+
+  itemMasterId     String
+  itemMaster       ItemMaster @relation(fields: [itemMasterId], references: [id])
+  receivedQuantity Int
+  acceptedQuantity Int
+  rejectedQuantity Int        @default(0)
+
+  @@map("goods_receipt_note_items")
+}
+
+model ItemCategory {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+
+  items ItemMaster[]
+
+  @@map("item_categories")
+}
+
+model ItemMaster {
+  id         String       @id @default(uuid())
+  tenantId   String
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   ItemCategory @relation(fields: [categoryId], references: [id])
+
+  sku           String  @unique
+  name          String
+  brand         String?
+  unitOfMeasure String // PCS, KG, LTR
+  barcode       String? @unique
+
+  prItems          PurchaseRequisitionItem[]
+  poItems          PurchaseOrderItem[]
+  grnItems         GoodsReceiptNoteItem[]
+  inventoryLedgers InventoryLedger[]
+  transactions     InventoryTransaction[]
+
+  @@map("item_masters")
+}
+
+model WarehouseZone {
+  id          String    @id @default(uuid())
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  name String
+
+  bins WarehouseBin[]
+
+  @@map("warehouse_zones")
+}
+
+model WarehouseBin {
+  id     String        @id @default(uuid())
+  zoneId String
+  zone   WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  name    String
+  barcode String? @unique
+
+  @@map("warehouse_bins")
+}
+
+model InventoryTransaction {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  warehouseId  String
+  warehouse    Warehouse  @relation(fields: [warehouseId], references: [id])
+  itemMasterId String
+  itemMaster   ItemMaster @relation(fields: [itemMasterId], references: [id])
+
+  type            String // STOCK_IN, STOCK_OUT, TRANSFER, ADJUSTMENT
+  quantity        Int
+  transactionDate DateTime @default(now())
+  reference       String? // Could be GRN ID, Work Order ID, etc.
+
+  @@map("inventory_transactions")
+}
+
+model InventoryLedger {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  warehouseId  String
+  warehouse    Warehouse  @relation(fields: [warehouseId], references: [id])
+  itemMasterId String
+  itemMaster   ItemMaster @relation(fields: [itemMasterId], references: [id])
+
+  currentStock    Int     @default(0)
+  valuationMethod String  @default("FIFO") // FIFO, LIFO, WEIGHTED_AVERAGE
+  unitValue       Decimal @default(0)
+
+  @@unique([warehouseId, itemMasterId])
+  @@map("inventory_ledgers")
+}
+
+model Budget {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name        String
+  fiscalYear  String
+  totalAmount Decimal
+
+  allocations BudgetAllocation[]
+
+  @@map("budgets")
+}
+
+model BudgetAllocation {
+  id       String @id @default(uuid())
+  budgetId String
+  budget   Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  department      String
+  allocatedAmount Decimal
+  spentAmount     Decimal @default(0)
+
+  @@map("budget_allocations")
+}
+
+// ------------------------------------------------------
+// 39. ADVANCED FACILITY MANAGEMENT CLOUD (Phase 10)
+// ------------------------------------------------------
+
+model Campus {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name            String
+  locationAddress String?
+  totalArea       Float?
+
+  projects PropertyProject[]
+
+  @@map("campuses")
+}
+
+model Zone {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name String
+  type String // INDOOR, OUTDOOR, PARKING, RESTRICTED
+
+  commonAreas CommonArea[]
+
+  @@map("zones")
+}
+
+model CommonArea {
+  id     String @id @default(uuid())
+  zoneId String
+  zone   Zone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+
+  name             String
+  areaSquareMeters Float?
+
+  @@map("common_areas")
+}
+
+model AssetCategory {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  name              String
+  expectedLifeYears Int    @default(5)
+
+  assets FacilityAsset[]
+
+  @@map("asset_categories")
+}
+
+model AssetDepreciation {
+  id      String        @id @default(uuid())
+  assetId String        @unique
+  asset   FacilityAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  currentValuation Decimal
+  calculatedAt     DateTime @default(now())
+
+  @@map("asset_depreciations")
+}
+
+model MaintenancePlan {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  assetId String?
+  asset   FacilityAsset? @relation(fields: [assetId], references: [id])
+
+  name              String
+  frequency         String // DAILY, WEEKLY, MONTHLY, ANNUAL
+  checklistTemplate String? // JSON string or ID
+
+  schedules MaintenanceSchedule[]
+
+  @@map("maintenance_plans")
+}
+
+model UtilityMeter {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id])
+
+  utilityType String // ELECTRICITY, WATER, GAS
+  meterNumber String  @unique
+  location    String?
+
+  consumptions UtilityConsumption[]
+
+  @@map("utility_meters")
+}
+
+model UtilityConsumption {
+  id      String       @id @default(uuid())
+  meterId String
+  meter   UtilityMeter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+
+  readingDate    DateTime @default(now())
+  value          Decimal // kWh or Liters
+  costAllocation Decimal?
+
+  @@map("utility_consumptions")
+}
+
+model ESGMetric {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  metricType            String // CARBON_EMISSION, RECYCLING_RATE, GREEN_SCORE
+  carbonEquivalentValue Decimal
+  recordedAt            DateTime @default(now())
+
+  @@map("esg_metrics")
+}
+
+// ------------------------------------------------------
+// 40. CONSTRUCTION ERP CLOUD (Phase 11)
+// ------------------------------------------------------
+
+model LandParcel {
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  surveyNumber    String   @unique
+  gisCoordinates  String?
+  totalArea       Decimal
+  acquisitionCost Decimal?
+
+  projects PropertyProject[]
+
+  @@map("land_parcels")
+}
+
+model BoqTemplate {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  version String @default("1.0")
+  status  String @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REVISED
+
+  items BoqItem[]
+
+  @@map("boq_templates")
+}
+
+model BoqItem {
+  id         String      @id @default(uuid())
+  templateId String
+  template   BoqTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  categoryId   String?
+  itemMasterId String?
+
+  quantity      Int
+  estimatedCost Decimal
+
+  prItems PurchaseRequisitionItem[]
+
+  @@map("boq_items")
+}
+
+model DailyProgressReport {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  loggedById        String
+  reportDate        DateTime @default(now())
+  weatherConditions String?
+
+  laborAttendances LaborAttendance[]
+  siteMedia        SiteMedia[]
+
+  @@map("daily_progress_reports")
+}
+
+model LaborAttendance {
+  id    String              @id @default(uuid())
+  dprId String
+  dpr   DailyProgressReport @relation(fields: [dprId], references: [id], onDelete: Cascade)
+
+  vendorId       String?
+  skilledCount   Int     @default(0)
+  unskilledCount Int     @default(0)
+
+  @@map("labor_attendances")
+}
+
+model SiteMedia {
+  id    String              @id @default(uuid())
+  dprId String
+  dpr   DailyProgressReport @relation(fields: [dprId], references: [id], onDelete: Cascade)
+
+  mediaUrl  String
+  mediaType String // PHOTO, VIDEO
+
+  @@map("site_media")
+}
+
+model Defect {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  description String
+  severity    String // LOW, MEDIUM, HIGH, CRITICAL
+  status      String @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, VERIFIED
+
+  @@map("defects")
+}
+
+model SafetyAudit {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  auditDate       DateTime @default(now())
+  complianceScore Float    @default(0)
+
+  @@map("safety_audits")
+}
+
+model IncidentReport {
+  id              String          @id @default(uuid())
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  incidentType String // NEAR_MISS, INJURY, FATALITY
+  severity     String
+  reportedAt   DateTime @default(now())
+
+  @@map("incident_reports")
+}
+
+model SnagList {
+  id     String @id @default(uuid())
+  unitId String
+  unit   Unit   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  status String @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, VERIFIED
+
+  @@map("snag_lists")
+}
+
+model ProjectWip {
+  id              String          @id @default(uuid())
+  projectId       String          @unique
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  materialCost     Decimal @default(0)
+  laborCost        Decimal @default(0)
+  totalCapitalized Decimal @default(0)
+
+  @@map("project_wip")
+}
+
+model Portfolio {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime?
+
+  properties PropertyProject[]
+  tenant     Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId])
+}
+
+model Block {
+  id                String    @id @default(cuid())
+  propertyProjectId String
+  name              String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  archivedAt        DateTime?
+
+  propertyProject PropertyProject @relation(fields: [propertyProjectId], references: [id], onDelete: Restrict)
+  towers          Tower[]
+
+  @@index([propertyProjectId])
+}
+
+// ------------------------------------------------------
+// CRM & SALES CLOUD MODELS
+// ------------------------------------------------------
+
+model LeadNote {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  content   String
+  authorId  String
+  author    User     @relation("LeadNoteAuthor", fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeadActivity {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  type      String // CALL, EMAIL, WHATSAPP, NOTE, STATUS_CHANGE
+  title     String
+  details   String?
+  userId    String?
+  user      User?    @relation("LeadActivityUser", fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model SiteVisit {
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId          String
+  lead            Lead             @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  projectId       String?
+  propertyProject PropertyProject? @relation(fields: [projectId], references: [id])
+  scheduledAt     DateTime
+  completedAt     DateTime?
+  status          String           @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  assignedAgentId String?
+  agent           User?            @relation("SiteVisitAgent", fields: [assignedAgentId], references: [id])
+  feedback        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model InterestedUnit {
+  id         String    @id @default(uuid())
+  tenantId   String
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId     String
+  lead       Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  unitId     String
+  unit       Unit      @relation(fields: [unitId], references: [id])
+  status     String    @default("INTERESTED") // INTERESTED, RESERVED
+  reservedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Booking {
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId          String
+  lead            Lead             @relation(fields: [leadId], references: [id])
+  customerId      String?
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  unitId          String
+  unit            Unit             @relation(fields: [unitId], references: [id])
+  projectId       String?
+  propertyProject PropertyProject? @relation(fields: [projectId], references: [id])
+  bookingAmount   Float
+  downPayment     Float?           @default(0)
+  installments    Int?             @default(0)
+  outstanding     Float?           @default(0)
+  paymentStatus   String           @default("TOKEN_PENDING") // TOKEN_PENDING, PARTIALLY_PAID, PAID, REFUNDED
+  agreementStatus String           @default("PENDING") // PENDING, GENERATED, SIGNED
+  status          String           @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  assignedAgentId String?
+  agent           User?            @relation("BookingAgent", fields: [assignedAgentId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model SalesExecutiveAssignment {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id])
+  executiveId String
+  executive   User     @relation(fields: [executiveId], references: [id])
+  assignedAt  DateTime @default(now())
+}
+
+model Negotiation {
+  id             String   @id @default(uuid())
+  tenantId       String
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId         String
+  lead           Lead     @relation(fields: [leadId], references: [id])
+  unitId         String
+  unit           Unit     @relation(fields: [unitId], references: [id])
+  offeredPrice   Float
+  discountAmount Float
+  finalPrice     Float
+  approvalStatus String   @default("PENDING") // PENDING, AUTO_APPROVED, MANAGER_APPROVED, DIRECTOR_APPROVED, REJECTED
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Reservation {
+  id                String   @id @default(uuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leadId            String
+  lead              Lead     @relation(fields: [leadId], references: [id])
+  unitId            String
+  unit              Unit     @relation(fields: [unitId], references: [id])
+  executiveId       String
+  executive         User     @relation(fields: [executiveId], references: [id])
+  reservationAmount Float
+  status            String   @default("ACTIVE") // ACTIVE, EXPIRED, CONVERTED, CANCELLED
+  expiryDate        DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

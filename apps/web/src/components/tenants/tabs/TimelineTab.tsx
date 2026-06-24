@@ -1,0 +1,1 @@
+export function TimelineTab() { return <div className="p-8 text-[#71717A]">Historical Timeline mock view.</div>; }

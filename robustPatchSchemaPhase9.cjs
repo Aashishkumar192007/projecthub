@@ -1,0 +1,354 @@
+const fs = require('fs');
+const path = require('path');
+
+const schemaPath = path.join(__dirname, 'prisma', 'schema.prisma');
+let schema = fs.readFileSync(schemaPath, 'utf8');
+
+// Strip off the Phase 9 models completely
+const markerIndex = schema.indexOf('// 38. PROCUREMENT & INVENTORY CLOUD');
+if (markerIndex !== -1) {
+  schema = schema.substring(0, markerIndex);
+}
+
+// Fields we are trying to add that might already exist
+const tenantPhase9Fields = [
+  'vendorKycs', 'vendorPerformances', 'purchaseRequisitions', 'purchaseOrders',
+  'goodsReceiptNotes', 'itemCategories', 'itemMasters', 'warehouses',
+  'inventoryTransactions', 'inventoryLedgers', 'budgets'
+];
+
+const vendorPhase9Fields = ['kyc', 'performance', 'purchaseOrders'];
+const invoicePhase9Fields = ['purchaseOrderId', 'purchaseOrder', 'goodsReceiptNoteId', 'goodsReceiptNote', 'isThreeWayMatched'];
+
+// Helper to remove duplicate fields from a model block
+function cleanModel(modelString, fieldsToRemove) {
+  const lines = modelString.split('\\n');
+  return lines.filter(line => {
+    const trimmed = line.trim();
+    const propName = trimmed.split(' ')[0];
+    if (fieldsToRemove.includes(propName)) {
+      return false; // Remove this field so we can re-add it cleanly
+    }
+    return true;
+  }).join('\\n');
+}
+
+// Clean Tenant
+schema = schema.replace(/model Tenant \\{[\\s\\S]*?\\n\\}/g, match => {
+  let cleaned = cleanModel(match, tenantPhase9Fields);
+  // Remove the closing brace to append
+  cleaned = cleaned.replace(/\\n\\}$/, '');
+  const tenantAdditions = \`
+  vendorKycs              VendorKyc[]
+  vendorPerformances      VendorPerformance[]
+  purchaseRequisitions    PurchaseRequisition[]
+  purchaseOrders          PurchaseOrder[]
+  goodsReceiptNotes       GoodsReceiptNote[]
+  itemCategories          ItemCategory[]
+  itemMasters             ItemMaster[]
+  warehouses              Warehouse[]
+  inventoryTransactions   InventoryTransaction[]
+  inventoryLedgers        InventoryLedger[]
+  budgets                 Budget[]
+}\`;
+  return cleaned + tenantAdditions;
+});
+
+// Clean Vendor
+schema = schema.replace(/model Vendor \\{[\\s\\S]*?\\n\\}/g, match => {
+  let cleaned = cleanModel(match, vendorPhase9Fields);
+  cleaned = cleaned.replace(/\\n\\}$/, '');
+  const vendorAdditions = \`
+  kyc                     VendorKyc?
+  performance             VendorPerformance?
+  purchaseOrders          PurchaseOrder[]
+}\`;
+  return cleaned + vendorAdditions;
+});
+
+// Clean Invoice
+schema = schema.replace(/model Invoice \\{[\\s\\S]*?\\n\\}/g, match => {
+  let cleaned = cleanModel(match, invoicePhase9Fields);
+  cleaned = cleaned.replace(/\\n\\}$/, '');
+  const invoiceAdditions = \`
+  purchaseOrderId         String?
+  purchaseOrder           PurchaseOrder?     @relation(fields: [purchaseOrderId], references: [id])
+  goodsReceiptNoteId      String?
+  goodsReceiptNote        GoodsReceiptNote?  @relation(fields: [goodsReceiptNoteId], references: [id])
+  isThreeWayMatched       Boolean            @default(false)
+}\`;
+  return cleaned + invoiceAdditions;
+});
+
+const newModels = \`
+// ------------------------------------------------------
+// 38. PROCUREMENT & INVENTORY CLOUD (Phase 9)
+// ------------------------------------------------------
+
+model VendorKyc {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendorId           String   @unique
+  vendor             Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  gstNumber          String?
+  panNumber          String?
+  bankName           String?
+  accountNumber      String?
+  ifscCode           String?
+  insuranceDocUrl    String?
+  kycStatus          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  
+  @@map("vendor_kycs")
+}
+
+model VendorPerformance {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  vendorId           String   @unique
+  vendor             Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  
+  slaComplianceScore Float    @default(0)
+  avgResponseTime    Float    @default(0) // in hours
+  qualityRating      Float    @default(0) // 1-5 scale
+  residentFeedback   Float    @default(0) // 1-5 scale
+  
+  @@map("vendor_performances")
+}
+
+model PurchaseRequisition {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  requesterId        String
+  requester          Employee @relation(fields: [requesterId], references: [id])
+  department         String
+  status             String   @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED
+  createdAt          DateTime @default(now())
+  
+  items              PurchaseRequisitionItem[]
+  purchaseOrders     PurchaseOrder[]
+  
+  @@map("purchase_requisitions")
+}
+
+model PurchaseRequisitionItem {
+  id                 String   @id @default(uuid())
+  prId               String
+  purchaseRequisition PurchaseRequisition @relation(fields: [prId], references: [id], onDelete: Cascade)
+  
+  itemMasterId       String
+  itemMaster         ItemMaster @relation(fields: [itemMasterId], references: [id])
+  quantity           Int
+  estimatedPrice     Decimal
+  
+  @@map("purchase_requisition_items")
+}
+
+model PurchaseOrder {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  prId               String?
+  purchaseRequisition PurchaseRequisition? @relation(fields: [prId], references: [id])
+  vendorId           String
+  vendor             Vendor   @relation(fields: [vendorId], references: [id])
+  
+  status             String   @default("ISSUED") // ISSUED, AMENDED, CANCELLED, FULFILLED
+  totalAmount        Decimal
+  issueDate          DateTime @default(now())
+  
+  items              PurchaseOrderItem[]
+  goodsReceiptNotes  GoodsReceiptNote[]
+  invoices           Invoice[]
+  
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id                 String   @id @default(uuid())
+  poId               String
+  purchaseOrder      PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  
+  itemMasterId       String
+  itemMaster         ItemMaster @relation(fields: [itemMasterId], references: [id])
+  quantity           Int
+  unitPrice          Decimal
+  
+  @@map("purchase_order_items")
+}
+
+model GoodsReceiptNote {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  poId               String
+  purchaseOrder      PurchaseOrder @relation(fields: [poId], references: [id])
+  warehouseId        String
+  warehouse          Warehouse @relation(fields: [warehouseId], references: [id])
+  
+  status             String   @default("RECEIVED") // RECEIVED, PARTIAL, QUALITY_CHECK_FAILED
+  receiptDate        DateTime @default(now())
+  
+  items              GoodsReceiptNoteItem[]
+  invoices           Invoice[]
+  
+  @@map("goods_receipt_notes")
+}
+
+model GoodsReceiptNoteItem {
+  id                 String   @id @default(uuid())
+  grnId              String
+  goodsReceiptNote   GoodsReceiptNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  
+  itemMasterId       String
+  itemMaster         ItemMaster @relation(fields: [itemMasterId], references: [id])
+  receivedQuantity   Int
+  acceptedQuantity   Int
+  rejectedQuantity   Int      @default(0)
+  
+  @@map("goods_receipt_note_items")
+}
+
+model ItemCategory {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name               String
+  description        String?
+  
+  items              ItemMaster[]
+  
+  @@map("item_categories")
+}
+
+model ItemMaster {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categoryId         String
+  category           ItemCategory @relation(fields: [categoryId], references: [id])
+  
+  sku                String   @unique
+  name               String
+  brand              String?
+  unitOfMeasure      String   // PCS, KG, LTR
+  barcode            String?  @unique
+  
+  prItems            PurchaseRequisitionItem[]
+  poItems            PurchaseOrderItem[]
+  grnItems           GoodsReceiptNoteItem[]
+  inventoryLedgers   InventoryLedger[]
+  transactions       InventoryTransaction[]
+  
+  @@map("item_masters")
+}
+
+model Warehouse {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name               String
+  location           String
+  
+  zones              WarehouseZone[]
+  grns               GoodsReceiptNote[]
+  ledgers            InventoryLedger[]
+  transactions       InventoryTransaction[]
+  
+  @@map("warehouses")
+}
+
+model WarehouseZone {
+  id                 String   @id @default(uuid())
+  warehouseId        String
+  warehouse          Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  name               String
+  
+  bins               WarehouseBin[]
+  
+  @@map("warehouse_zones")
+}
+
+model WarehouseBin {
+  id                 String   @id @default(uuid())
+  zoneId             String
+  zone               WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  
+  name               String
+  barcode            String?  @unique
+  
+  @@map("warehouse_bins")
+}
+
+model InventoryTransaction {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  warehouseId        String
+  warehouse          Warehouse @relation(fields: [warehouseId], references: [id])
+  itemMasterId       String
+  itemMaster         ItemMaster @relation(fields: [itemMasterId], references: [id])
+  
+  type               String   // STOCK_IN, STOCK_OUT, TRANSFER, ADJUSTMENT
+  quantity           Int
+  transactionDate    DateTime @default(now())
+  reference          String?  // Could be GRN ID, Work Order ID, etc.
+  
+  @@map("inventory_transactions")
+}
+
+model InventoryLedger {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  warehouseId        String
+  warehouse          Warehouse @relation(fields: [warehouseId], references: [id])
+  itemMasterId       String
+  itemMaster         ItemMaster @relation(fields: [itemMasterId], references: [id])
+  
+  currentStock       Int      @default(0)
+  valuationMethod    String   @default("FIFO") // FIFO, LIFO, WEIGHTED_AVERAGE
+  unitValue          Decimal  @default(0)
+  
+  @@unique([warehouseId, itemMasterId])
+  @@map("inventory_ledgers")
+}
+
+model Budget {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name               String
+  fiscalYear         String
+  totalAmount        Decimal
+  
+  allocations        BudgetAllocation[]
+  
+  @@map("budgets")
+}
+
+model BudgetAllocation {
+  id                 String   @id @default(uuid())
+  budgetId           String
+  budget             Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  
+  department         String
+  allocatedAmount    Decimal
+  spentAmount        Decimal  @default(0)
+  
+  @@map("budget_allocations")
+}
+\`;
+
+fs.writeFileSync(schemaPath, schema + newModels);
+console.log('Robust Phase 9 Schema patched successfully.');

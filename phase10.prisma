@@ -1,0 +1,124 @@
+
+// ------------------------------------------------------
+// 39. ADVANCED FACILITY MANAGEMENT CLOUD (Phase 10)
+// ------------------------------------------------------
+
+model Campus {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name               String
+  locationAddress    String?
+  totalArea          Float?
+  
+  projects           PropertyProject[]
+  
+  @@map("campuses")
+}
+
+model Zone {
+  id                 String   @id @default(uuid())
+  projectId          String
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  name               String
+  type               String   // INDOOR, OUTDOOR, PARKING, RESTRICTED
+  
+  commonAreas        CommonArea[]
+  
+  @@map("zones")
+}
+
+model CommonArea {
+  id                 String   @id @default(uuid())
+  zoneId             String
+  zone               Zone     @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  
+  name               String
+  areaSquareMeters   Float?
+  
+  @@map("common_areas")
+}
+
+model AssetCategory {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  name               String
+  expectedLifeYears  Int      @default(5)
+  
+  assets             FacilityAsset[]
+  
+  @@map("asset_categories")
+}
+
+model AssetDepreciation {
+  id                 String   @id @default(uuid())
+  assetId            String   @unique
+  asset              FacilityAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  
+  currentValuation   Decimal
+  calculatedAt       DateTime @default(now())
+  
+  @@map("asset_depreciations")
+}
+
+model MaintenancePlan {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  assetId            String?
+  asset              FacilityAsset? @relation(fields: [assetId], references: [id])
+  
+  name               String
+  frequency          String   // DAILY, WEEKLY, MONTHLY, ANNUAL
+  checklistTemplate  String?  // JSON string or ID
+  
+  schedules          MaintenanceSchedule[]
+  
+  @@map("maintenance_plans")
+}
+
+model UtilityMeter {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  projectId          String
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id])
+  
+  utilityType        String   // ELECTRICITY, WATER, GAS
+  meterNumber        String   @unique
+  location           String?
+  
+  consumptions       UtilityConsumption[]
+  
+  @@map("utility_meters")
+}
+
+model UtilityConsumption {
+  id                 String   @id @default(uuid())
+  meterId            String
+  meter              UtilityMeter @relation(fields: [meterId], references: [id], onDelete: Cascade)
+  
+  readingDate        DateTime @default(now())
+  value              Decimal  // kWh or Liters
+  costAllocation     Decimal?
+  
+  @@map("utility_consumptions")
+}
+
+model ESGMetric {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  metricType         String   // CARBON_EMISSION, RECYCLING_RATE, GREEN_SCORE
+  carbonEquivalentValue Decimal
+  recordedAt         DateTime @default(now())
+  
+  @@map("esg_metrics")
+}

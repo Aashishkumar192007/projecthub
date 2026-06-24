@@ -1,0 +1,143 @@
+
+// ------------------------------------------------------
+// 40. CONSTRUCTION ERP CLOUD (Phase 11)
+// ------------------------------------------------------
+
+model LandParcel {
+  id                 String   @id @default(uuid())
+  tenantId           String
+  tenant             Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  surveyNumber       String   @unique
+  gisCoordinates     String?
+  totalArea          Decimal
+  acquisitionCost    Decimal?
+  
+  projects           PropertyProject[]
+  
+  @@map("land_parcels")
+}
+
+model BoqTemplate {
+  id                 String   @id @default(uuid())
+  projectId          String
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  version            String   @default("1.0")
+  status             String   @default("DRAFT") // DRAFT, PENDING_APPROVAL, APPROVED, REVISED
+  
+  items              BoqItem[]
+  
+  @@map("boq_templates")
+}
+
+model BoqItem {
+  id                 String   @id @default(uuid())
+  templateId         String
+  template           BoqTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  categoryId         String?
+  itemMasterId       String?
+  
+  quantity           Int
+  estimatedCost      Decimal
+  
+  prItems            PurchaseRequisitionItem[]
+  
+  @@map("boq_items")
+}
+
+model DailyProgressReport {
+  id                 String   @id @default(uuid())
+  projectId          String
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  loggedById         String
+  reportDate         DateTime @default(now())
+  weatherConditions  String?
+  
+  laborAttendances   LaborAttendance[]
+  siteMedia          SiteMedia[]
+  
+  @@map("daily_progress_reports")
+}
+
+model LaborAttendance {
+  id                 String   @id @default(uuid())
+  dprId              String
+  dpr                DailyProgressReport @relation(fields: [dprId], references: [id], onDelete: Cascade)
+  
+  vendorId           String?
+  skilledCount       Int      @default(0)
+  unskilledCount     Int      @default(0)
+  
+  @@map("labor_attendances")
+}
+
+model SiteMedia {
+  id                 String   @id @default(uuid())
+  dprId              String
+  dpr                DailyProgressReport @relation(fields: [dprId], references: [id], onDelete: Cascade)
+  
+  mediaUrl           String
+  mediaType          String   // PHOTO, VIDEO
+  
+  @@map("site_media")
+}
+
+model Defect {
+  id                 String   @id @default(uuid())
+  projectId          String
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  description        String
+  severity           String   // LOW, MEDIUM, HIGH, CRITICAL
+  status             String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, VERIFIED
+  
+  @@map("defects")
+}
+
+model SafetyAudit {
+  id                 String   @id @default(uuid())
+  projectId          String
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  auditDate          DateTime @default(now())
+  complianceScore    Float    @default(0)
+  
+  @@map("safety_audits")
+}
+
+model IncidentReport {
+  id                 String   @id @default(uuid())
+  projectId          String
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  incidentType       String   // NEAR_MISS, INJURY, FATALITY
+  severity           String
+  reportedAt         DateTime @default(now())
+  
+  @@map("incident_reports")
+}
+
+model SnagList {
+  id                 String   @id @default(uuid())
+  unitId             String
+  unit               Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  
+  status             String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, VERIFIED
+  
+  @@map("snag_lists")
+}
+
+model ProjectWip {
+  id                 String   @id @default(uuid())
+  projectId          String   @unique
+  propertyProject    PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  materialCost       Decimal  @default(0)
+  laborCost          Decimal  @default(0)
+  totalCapitalized   Decimal  @default(0)
+  
+  @@map("project_wip")
+}
