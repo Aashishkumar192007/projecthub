@@ -6,6 +6,8 @@ import { Target, Activity, Heart, ArrowUpRight, ArrowDownRight, Headset, CheckCi
 export function OverviewTab() {
   const { stats } = useSocietyStore();
 
+  if (!stats) return null;
+
   return (
     <div className="p-8 space-y-6">
       

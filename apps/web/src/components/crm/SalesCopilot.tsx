@@ -2,6 +2,8 @@
 
 import { useCrmStore } from '@/store/crmStore';
 import { Bot, Sparkles, TrendingUp, AlertTriangle, ArrowRight, Target, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+
 
 export function SalesCopilot() {
   const { entities, activeEntityId } = useCrmStore();
@@ -90,7 +92,7 @@ export function SalesCopilot() {
                   </div>
 
                   {insight.actionLabel && (
-                    <button className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all text-[10px] font-bold ${
+                    <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-all text-[10px] font-bold ${
                       insight.isUrgent 
                         ? 'bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30' 
                         : 'bg-[#111111] hover:bg-[#1E1E22] text-white border border-[#3F3F46]'
@@ -114,19 +116,19 @@ export function SalesCopilot() {
         <div className="pt-4 border-t border-[#2A2A30]">
            <p className="text-[10px] font-bold text-[#71717A] tracking-widest uppercase mb-3">Quick Follow-Up</p>
            <div className="grid grid-cols-2 gap-2">
-             <button className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
+             <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
                <p className="text-xs font-bold text-white">Call Lead</p>
                <p className="text-[9px] text-[#71717A] mt-1">Log Activity</p>
              </button>
-             <button className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
+             <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
                <p className="text-xs font-bold text-white">Email</p>
                <p className="text-[9px] text-[#71717A] mt-1">Send Brochure</p>
              </button>
-             <button className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
+             <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
                <p className="text-xs font-bold text-white">WhatsApp</p>
                <p className="text-[9px] text-[#71717A] mt-1">Message Directly</p>
              </button>
-             <button className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
+             <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="p-3 bg-[#1A1A1A] hover:bg-[#1E1E22] border border-[#2A2A30] rounded-lg text-left transition-colors">
                <p className="text-xs font-bold text-white">Schedule Visit</p>
                <p className="text-[9px] text-[#71717A] mt-1">Calendar Invite</p>
              </button>

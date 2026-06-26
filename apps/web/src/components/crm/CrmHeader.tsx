@@ -1,6 +1,8 @@
 'use client';
 
 import { Search, Calendar, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
+
 
 export function CrmHeader() {
   return (
@@ -26,13 +28,13 @@ export function CrmHeader() {
         </div>
 
         {/* Project Selector */}
-        <button className="flex items-center justify-between gap-3 px-4 py-2 bg-[#1A1A1A] border border-neutral-800 rounded text-sm text-neutral-300 hover:bg-[#222222] transition-colors w-40">
+        <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="flex items-center justify-between gap-3 px-4 py-2 bg-[#1A1A1A] border border-neutral-800 rounded text-sm text-neutral-300 hover:bg-[#222222] transition-colors w-40">
           <span>Skyline Plaza</span>
           <ChevronDown className="w-4 h-4 text-neutral-500" />
         </button>
 
         {/* Date Picker Button */}
-        <button className="flex items-center justify-center w-10 h-10 bg-[#1A1A1A] border border-neutral-800 rounded text-neutral-400 hover:text-white hover:bg-[#222222] transition-colors">
+        <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="flex items-center justify-center w-10 h-10 bg-[#1A1A1A] border border-neutral-800 rounded text-neutral-400 hover:text-white hover:bg-[#222222] transition-colors">
           <Calendar className="w-4 h-4" />
         </button>
       </div>

@@ -6,7 +6,7 @@ import { Home, Megaphone, PieChart, CalendarDays, Wrench, FileText, ArrowRight }
 export function SocietyHeader() {
   const { stats, activeCategoryId } = useSocietyStore();
   
-  if (!activeCategoryId) return null;
+  if (!activeCategoryId || !stats) return null;
 
   return (
     <div className="bg-[#161616] border-b border-[#2A2A30] p-8 shrink-0 relative overflow-hidden">

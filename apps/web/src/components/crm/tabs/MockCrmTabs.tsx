@@ -1,6 +1,8 @@
 'use client';
 
 import { Users, Target, CheckSquare, Building2, Briefcase, Handshake, Megaphone, MessageCircle, FileText, BarChart3, TrendingUp, AlertTriangle, Send } from 'lucide-react';
+import { toast } from 'sonner';
+
 
 export function CustomersTab() {
   return (
@@ -24,7 +26,7 @@ export function OpportunitiesTab() {
         <div className="bg-[#1A1A1A] p-4 rounded-xl border border-[#2A2A30]"><p className="text-[10px] text-[#A1A1AA] uppercase">Win Rate</p><p className="text-2xl font-black text-success mt-1">18.4%</p></div>
         <div className="col-span-2 bg-[#1A1A1A] p-4 rounded-xl border border-[#2A2A30] flex items-center justify-between">
           <div><p className="text-[10px] text-[#A1A1AA] uppercase">Expected Value</p><p className="text-2xl font-black text-brand-blue mt-1">₹42.5 Cr</p></div>
-          <button className="px-4 py-2 bg-[#00E5FF]/10 text-[#00E5FF] border border-[#00E5FF]/30 font-bold rounded-lg transition-colors h-full">Run Forecast</button>
+          <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="px-4 py-2 bg-[#00E5FF]/10 text-[#00E5FF] border border-[#00E5FF]/30 font-bold rounded-lg transition-colors h-full">Run Forecast</button>
         </div>
       </div>
     </div>

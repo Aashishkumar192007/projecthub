@@ -1,6 +1,8 @@
 'use client';
 
 import { CalendarPlus, MapPin, Clock, User, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
+
 
 export function SiteVisitsTab() {
   return (
@@ -8,7 +10,7 @@ export function SiteVisitsTab() {
       
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-bold text-white flex items-center gap-2"><CalendarPlus size={16} className="text-[#00E5FF]"/> Site Visit Schedule</h3>
-        <button className="text-[10px] text-[#00E5FF] uppercase font-bold px-3 py-1 bg-[#00E5FF]/10 border border-[#00E5FF]/30 rounded hover:bg-[#00E5FF]/20 transition-colors">
+        <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="text-[10px] text-[#00E5FF] uppercase font-bold px-3 py-1 bg-[#00E5FF]/10 border border-[#00E5FF]/30 rounded hover:bg-[#00E5FF]/20 transition-colors">
           Schedule Visit
         </button>
       </div>
@@ -67,7 +69,7 @@ export function SiteVisitsTab() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className="text-[9px] font-bold bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded border border-brand-blue/30 uppercase">Confirmed</span>
-                <button className="text-[10px] font-bold text-white bg-[#2A2A30] px-3 py-1.5 rounded hover:bg-[#3F3F46] transition-colors">Reschedule</button>
+                <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="text-[10px] font-bold text-white bg-[#2A2A30] px-3 py-1.5 rounded hover:bg-[#3F3F46] transition-colors">Reschedule</button>
               </div>
             </div>
 
@@ -85,7 +87,7 @@ export function SiteVisitsTab() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <span className="text-[9px] font-bold bg-success/10 text-success px-2 py-0.5 rounded border border-success/30 uppercase flex items-center gap-1"><CheckCircle2 size={10}/> Completed</span>
-                <button className="text-[10px] font-bold text-brand-blue hover:underline">View Feedback</button>
+                <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="text-[10px] font-bold text-brand-blue hover:underline">View Feedback</button>
               </div>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Building, Landmark, BarChart3, HelpCircle, Settings, Building2, Banknote, FileText, FileBarChart, PieChart, ShoppingCart, Package, Home, FileCheck, Bot, FolderGit2, Activity, User, LayoutDashboard, Database, Users, Target } from 'lucide-react';
+import { LayoutGrid, Building, Landmark, BarChart3, HelpCircle, Settings, Building2, Banknote, FileText, FileBarChart, PieChart, ShoppingCart, Package, Home, FileCheck, Bot, FolderGit2, Activity, User, LayoutDashboard, Database, Users, Target, ShieldCheck, FileSignature, BookCheck, MessageCircle } from 'lucide-react';
 
 export function ContextNavigator() {
   const pathname = usePathname();
@@ -15,11 +15,15 @@ export function ContextNavigator() {
     { icon: Building2, label: 'Properties', href: '/properties' },
     { icon: Users, label: 'Tenants', href: '/tenants' },
     { icon: Target, label: 'CRM', href: '/crm' },
+    { icon: MessageCircle, label: 'Communications', href: '/communications' },
     { icon: FolderGit2, label: 'Projects', href: '/projects' },
     { icon: Activity, label: 'Facilities', href: '/facilities' },
     { icon: Banknote, label: 'Revenue', href: '/revenue' },
     { icon: FileText, label: 'Leases', href: '/leases' },
     { icon: FileText, label: 'Documents', href: '/documents' },
+    { icon: BookCheck, label: 'Agreements', href: '/agreements' },
+    { icon: FileSignature, label: 'E-Sign', href: '/e-sign' },
+    { icon: ShieldCheck, label: 'Legal', href: '/legal' },
     { icon: FileBarChart, label: 'Reports', href: '/reports' },
     { icon: PieChart, label: 'Analytics', href: '/analytics' },
   ];
@@ -39,11 +43,15 @@ export function ContextNavigator() {
         { icon: Building, label: 'Portfolio', href: '/portfolio' },
         { icon: Building2, label: 'Properties', href: '/properties' },
         { icon: Target, label: 'CRM', href: '/crm' },
+        { icon: MessageCircle, label: 'Communications', href: '/communications' },
         { icon: FolderGit2, label: 'Projects', href: '/projects' },
         { icon: Activity, label: 'Facilities', href: '/facilities' },
         { icon: Banknote, label: 'Revenue', href: '/revenue' },
         { icon: FileText, label: 'Leases', href: '/leases' },
         { icon: FileText, label: 'Documents', href: '/documents' },
+        { icon: BookCheck, label: 'Agreements', href: '/agreements' },
+        { icon: FileSignature, label: 'E-Sign', href: '/e-sign' },
+        { icon: ShieldCheck, label: 'Legal', href: '/legal' },
         { icon: FileBarChart, label: 'Reports', href: '/reports' },
         { icon: PieChart, label: 'Analytics', href: '/analytics' },
       ]

@@ -5,7 +5,7 @@ import { Clock, Headset, Megaphone, PieChart, UserPlus, Calendar, IndianRupee } 
 
 export function TimelineTab() {
   const { events, activeCategoryId } = useSocietyStore();
-  const activeEvents = events.filter(e => e.categoryId === activeCategoryId);
+  const activeEvents = (events || []).filter(e => e.categoryId === activeCategoryId);
   
   const getEventIcon = (type: string) => {
     switch (type) {

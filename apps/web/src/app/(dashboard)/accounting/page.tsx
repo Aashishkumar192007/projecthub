@@ -89,7 +89,7 @@ export default function AccountingDashboard() {
                     <tr key={inv.id}>
                       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900"><DollarSign className="h-4 w-4 inline mr-1 text-red-500" /> {inv.id.slice(0, 8).toUpperCase()}</td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${inv.amount}</td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{new Date(inv.dueDate).toLocaleDateString()}</td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500" suppressHydrationWarning>{inv.dueDate ? inv.dueDate.split('T')[0] : ''}</td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{inv.type}</td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                         <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${inv.status === 'PAID' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{inv.status}</span>
@@ -101,7 +101,7 @@ export default function AccountingDashboard() {
                     <tr key={rec.id}>
                       <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900"><DollarSign className="h-4 w-4 inline mr-1 text-green-500" /> {rec.id.slice(0, 8).toUpperCase()}</td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${rec.amount}</td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{new Date(rec.paymentDate).toLocaleDateString()}</td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500" suppressHydrationWarning>{rec.paymentDate ? rec.paymentDate.split('T')[0] : ''}</td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{rec.paymentMethod}</td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                         <span className="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">CLEARED</span>

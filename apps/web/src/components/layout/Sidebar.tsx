@@ -15,11 +15,19 @@ import {
   CreditCard,
   ClipboardList,
   FolderOpen,
-  Wrench
+  Wrench,
+  Shield,
+  Bell,
+  Search,
+  Activity
 } from 'lucide-react';
 
 const navigation = [
+  { name: 'Global Search', href: '/search', icon: Search },
+  { name: 'Notifications', href: '/notifications', icon: Bell },
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'C-Suite Governance', href: '/executive/governance', icon: Activity },
+  { name: 'Enterprise Admin', href: '/admin', icon: Shield },
   { name: 'Properties', href: '/properties', icon: Building2 },
   { name: 'Projects', href: '/projects', icon: Map },
   { name: 'CRM & Leads', href: '/crm', icon: Briefcase },

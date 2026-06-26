@@ -1,17 +1,17 @@
 import { Controller, Get, Post, Body, Req } from '@nestjs/common';
 import { MaintenanceBillingService } from './maintenance-billing.service';
 
-@Controller('maintenance-billing')
+@Controller('v1/maintenance')
 export class MaintenanceBillingController {
   constructor(private readonly billingService: MaintenanceBillingService) {}
 
   @Get()
   getBills(@Req() req: any) {
-    return this.billingService.getBills(req['tenantId']);
+    return this.billingService.getBills(req['tenantId'] || 'acme-corp');
   }
 
   @Post()
   createBill(@Req() req: any, @Body() body: any) {
-    return this.billingService.createBill(req['tenantId'], body);
+    return this.billingService.createBill(req['tenantId'] || 'acme-corp', body);
   }
 }

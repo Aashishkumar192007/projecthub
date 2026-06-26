@@ -41,7 +41,7 @@ export function SocietyNavigator() {
 
       <div className="p-4 space-y-6">
         {categories.map((category) => {
-          const groupEntities = entities.filter(l => l.category === category);
+          const groupEntities = (entities || []).filter(l => l.category === category);
           const isActiveGroup = activeCategoryId === category;
           
           return (

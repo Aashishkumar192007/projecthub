@@ -7,7 +7,7 @@ export function SocietyCopilot() {
   const { entities, activeCategoryId } = useSocietyStore();
   
   if (!activeCategoryId) return null;
-  const activeEntities = entities.filter(r => r.category === activeCategoryId);
+  const activeEntities = (entities || []).filter(r => r.category === activeCategoryId);
 
   return (
     <div className="w-80 border-l border-[#2A2A30] bg-[#111111] h-full flex flex-col shrink-0 overflow-y-auto z-10">

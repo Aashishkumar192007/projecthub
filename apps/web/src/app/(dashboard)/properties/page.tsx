@@ -12,6 +12,7 @@ import { EditPropertyModal } from '@/components/properties/modals/EditPropertyMo
 import { ArchiveConfirmModal } from '@/components/properties/modals/ArchiveConfirmModal';
 import { ActionModals } from '@/components/properties/modals/ActionModals';
 import { AssignOwnerModal } from '@/components/properties/modals/AssignOwnerModal';
+import { QuickFilterMenu } from '@/components/ui/QuickFilterMenu';
 
 export interface HierarchyNode {
   id: string;
@@ -24,6 +25,7 @@ export interface HierarchyNode {
 export default function PropertiesPage() {
   const [isCloneOpen, setIsCloneOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [filterType, setFilterType] = useState('All Types');
   
   // Node actions state
   const [editNode, setEditNode] = useState<HierarchyNode | null>(null);
@@ -127,9 +129,12 @@ export default function PropertiesPage() {
             className="pl-10 bg-neutral-900 border-neutral-800 text-white focus:ring-blue-500"
           />
         </div>
-        <Button variant="outline" className="border-neutral-800 text-neutral-300 hover:bg-neutral-800">
-          <Filter className="w-4 h-4 mr-2" /> Filters
-        </Button>
+        <QuickFilterMenu 
+          value={filterType} 
+          onChange={setFilterType} 
+          options={['All Types', 'Commercial', 'Residential', 'Mixed Use']} 
+          label="Filters" 
+        />
       </div>
 
       {isLoading ? (

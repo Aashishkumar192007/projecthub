@@ -118,8 +118,19 @@ model Tenant {
   SalesExecutiveAssignment SalesExecutiveAssignment[]
   Negotiation              Negotiation[]
   Reservation              Reservation[]
+  CustomerOwnership        CustomerOwnership[]
+  CustomerInteraction      CustomerInteraction[]
+  Resident                 Resident[]
+  Occupancy                Occupancy[]
+  Amenity                  Amenity[]
+  AmenityBooking           AmenityBooking[]
 
   @@map("tenants")
+  whatsappSessions    WhatsAppSession[]
+  whatsappChats       WhatsAppChat[]
+  whatsappTemplates   WhatsAppTemplate[]
+  whatsappAutomations WhatsAppAutomation[]
+  whatsappAuditLogs   WhatsAppAuditLog[]
 }
 
 model Subscription {
@@ -183,6 +194,9 @@ model User {
 
   @@unique([tenantId, email])
   @@map("users")
+  whatsappSession     WhatsAppSession?
+  whatsappChats       WhatsAppChat[]
+  whatsappAuditLogs   WhatsAppAuditLog[]
 }
 
 model Role {
@@ -339,6 +353,8 @@ model PropertyProject {
   blocks               Block[]
   SiteVisit            SiteVisit[]
   Booking              Booking[]
+  CustomerOwnership    CustomerOwnership[]
+  Amenity              Amenity[]
 
   @@map("property_projects")
 }
@@ -381,28 +397,30 @@ model Unit {
   status           String  @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD, BLOCKED
   basePrice        Decimal
 
-  amenities        UnitAmenity[]
-  salesBookings    SalesBooking[]
-  listings         Listing[]
-  leases           Lease[]
-  maintenanceBills MaintenanceBill[]
-  complaints       Complaint[]
-  visitorLogs      VisitorLog[]
-  iotDevices       IotDevice[]
-  coworkingSpace   CoworkingSpace?
-  hotelRoom        HotelRoom?
-  retailStore      RetailStore?
-  valuationReports ValuationReport[]
-  parkingSlot      ParkingSlot?
-  documents        Document[]
-  ownerId          String?
-  owner            Customer?         @relation("UnitOwner", fields: [ownerId], references: [id])
-  SnagList         SnagList[]
-  archivedAt       DateTime?
-  InterestedUnit   InterestedUnit[]
-  Booking          Booking[]
-  Negotiation      Negotiation[]
-  Reservation      Reservation[]
+  amenities         UnitAmenity[]
+  salesBookings     SalesBooking[]
+  listings          Listing[]
+  leases            Lease[]
+  maintenanceBills  MaintenanceBill[]
+  complaints        Complaint[]
+  visitorLogs       VisitorLog[]
+  iotDevices        IotDevice[]
+  coworkingSpace    CoworkingSpace?
+  hotelRoom         HotelRoom?
+  retailStore       RetailStore?
+  valuationReports  ValuationReport[]
+  parkingSlot       ParkingSlot?
+  documents         Document[]
+  ownerId           String?
+  owner             Customer?           @relation("UnitOwner", fields: [ownerId], references: [id])
+  SnagList          SnagList[]
+  archivedAt        DateTime?
+  InterestedUnit    InterestedUnit[]
+  Booking           Booking[]
+  Negotiation       Negotiation[]
+  Reservation       Reservation[]
+  CustomerOwnership CustomerOwnership[]
+  Occupancy         Occupancy[]
 
   @@map("units")
 }
@@ -452,37 +470,40 @@ model Customer {
   phone     String?
   kycStatus String  @default("PENDING") // PENDING, VERIFIED
 
-  leads             Lead[]
-  opportunities     Opportunity[]
-  salesBookings     SalesBooking[]
-  invoices          Invoice[]
-  payments          Payment[]
-  contracts         Contract[]
-  kycRecord         KycRecord?
-  leases            Lease[]
-  complaints        Complaint[]
-  approvedVisitors  VisitorLog[]
-  investorProfile   Investor?
-  disputeCases      DisputeCase[]
-  evictionNotices   EvictionNotice[]
-  coworkingBookings CoworkingBooking[]
-  hotelBookings     HotelBooking[]
-  dataSubscriptions DataSubscription[]
-  vehicles          Vehicle[]
-  eventTickets      EventTicket[]
-  communityPosts    CommunityPost[]
-  communityComments CommunityComment[]
-  surveyResponses   SurveyResponse[]
-  familyMembers     FamilyMember[]
-  documents         Document[]
-  ownedUnits        Unit[]             @relation("UnitOwner")
-  pets              Pet[]
-  emergencyContacts EmergencyContact[]
-  committeeRoles    CommitteeMember[]
-  votes             Vote[]
-  facilityBookings  FacilityBooking[]
-  hostInvitations   GuestInvitation[]  @relation("HostInvitations")
-  Booking           Booking[]
+  leads               Lead[]
+  opportunities       Opportunity[]
+  salesBookings       SalesBooking[]
+  invoices            Invoice[]
+  payments            Payment[]
+  contracts           Contract[]
+  kycRecord           KycRecord?
+  leases              Lease[]
+  complaints          Complaint[]
+  approvedVisitors    VisitorLog[]
+  investorProfile     Investor?
+  disputeCases        DisputeCase[]
+  evictionNotices     EvictionNotice[]
+  coworkingBookings   CoworkingBooking[]
+  hotelBookings       HotelBooking[]
+  dataSubscriptions   DataSubscription[]
+  vehicles            Vehicle[]
+  eventTickets        EventTicket[]
+  communityPosts      CommunityPost[]
+  communityComments   CommunityComment[]
+  surveyResponses     SurveyResponse[]
+  familyMembers       FamilyMember[]
+  documents           Document[]
+  ownedUnits          Unit[]                @relation("UnitOwner")
+  pets                Pet[]
+  emergencyContacts   EmergencyContact[]
+  committeeRoles      CommitteeMember[]
+  votes               Vote[]
+  facilityBookings    FacilityBooking[]
+  hostInvitations     GuestInvitation[]     @relation("HostInvitations")
+  Booking             Booking[]
+  CustomerOwnership   CustomerOwnership[]
+  CustomerInteraction CustomerInteraction[]
+  Resident            Resident[]
 
   @@map("customers")
 }
@@ -728,6 +749,8 @@ model MaintenanceBill {
   billingPeriod String // e.g. "2026-08"
   amount        Decimal
   lineItems     MaintenanceBillLineItem[]
+  Resident      Resident?                 @relation(fields: [residentId], references: [id])
+  residentId    String?
 
   @@map("maintenance_bills")
 }
@@ -749,6 +772,8 @@ model Complaint {
   status      String      @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
   createdAt   DateTime    @default(now())
   workOrders  WorkOrder[]
+  Resident    Resident?   @relation(fields: [residentId], references: [id])
+  residentId  String?
 
   @@map("complaints")
 }
@@ -986,6 +1011,8 @@ model VisitorLog {
   guestInvitationId String?
   guestInvitation   GuestInvitation? @relation(fields: [guestInvitationId], references: [id])
   deliveryLog       DeliveryLog?
+  Resident          Resident?        @relation(fields: [residentId], references: [id])
+  residentId        String?
 
   @@map("visitor_logs")
 }
@@ -3117,4 +3144,214 @@ model Reservation {
   expiryDate        DateTime
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model CustomerOwnership {
+  id              String           @id @default(uuid())
+  tenantId        String
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId      String
+  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  propertyId      String?
+  propertyProject PropertyProject? @relation(fields: [propertyId], references: [id])
+  unitId          String?
+  unit            Unit?            @relation(fields: [unitId], references: [id])
+  ownershipPct    Float            @default(100.0)
+  purchaseDate    DateTime?
+  purchaseValue   Float?
+  currentValue    Float?
+  roi             Float?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("customer_ownerships")
+}
+
+model CustomerInteraction {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type       String // CALL, EMAIL, WHATSAPP, MEETING, SITE_VISIT, NEGOTIATION, BOOKING
+  summary    String
+  notes      String?
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@map("customer_interactions")
+}
+
+model Resident {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  type   String @default("OWNER") // OWNER, TENANT, FAMILY_MEMBER
+  status String @default("ACTIVE") // ACTIVE, MOVE_IN_PENDING, MOVE_OUT_SCHEDULED, INACTIVE
+
+  occupancies      Occupancy[]
+  amenityBookings  AmenityBooking[]
+  complaints       Complaint[]
+  maintenanceBills MaintenanceBill[]
+  visitorLogs      VisitorLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("residents")
+}
+
+model Occupancy {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  unitId     String
+  unit       Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  moveInDate  DateTime?
+  moveOutDate DateTime?
+  status      String    @default("ACTIVE") // ACTIVE, PAST, PENDING
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("occupancies")
+}
+
+model Amenity {
+  id              String          @id @default(uuid())
+  tenantId        String
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  projectId       String
+  propertyProject PropertyProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name     String
+  category String // CLUBHOUSE, POOL, GYM, BANQUET, SPORTS_COURT, CONFERENCE
+  capacity Int?
+  status   String @default("AVAILABLE") // AVAILABLE, MAINTENANCE, CLOSED
+
+  bookings AmenityBooking[]
+
+  @@map("amenities")
+}
+
+model AmenityBooking {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  amenityId  String
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  residentId String
+  resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  startTime  DateTime
+  endTime    DateTime
+  status     String   @default("PENDING") // PENDING, APPROVED, CANCELLED, COMPLETED
+  paymentRef String?
+
+  @@map("amenity_bookings")
+}
+
+
+// ------------------------------------------------------
+// 39. PERSONAL WHATSAPP WORKSPACE INTEGRATION CLOUD
+// ------------------------------------------------------
+
+model WhatsAppSession {
+  id        String    @id @default(uuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id])
+  phone     String?
+  status    String    @default("DISCONNECTED") // CONNECTED, SCANNING_QR, DISCONNECTED
+  qrCode    String?
+  device    String?
+  lastSync  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model WhatsAppChat {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  contactName   String
+  phone         String
+  avatar        String?
+  unreadCount   Int      @default(0)
+  category      String   @default("ALL_CHATS") // ALL_CHATS, UNREAD, HOT_LEADS, CUSTOMERS, BROKERS, OWNERS, RESIDENTS, ARCHIVED
+  leadStatus    String?
+  lastMessage   String?
+  lastMessageAt DateTime @default(now())
+  
+  leadId        String?
+  customerId    String?
+  residentId    String?
+  ownerId       String?
+  brokerId      String?
+  
+  messages      WhatsAppMessage[]
+  auditLogs     WhatsAppAuditLog[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model WhatsAppMessage {
+  id           String       @id @default(uuid())
+  chatId       String
+  chat         WhatsAppChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender       String       @default("AGENT") // AGENT, CONTACT, AI
+  content      String
+  mediaType    String       @default("TEXT") // TEXT, IMAGE, VIDEO, PDF, VOICE, DOCUMENT
+  mediaUrl     String?
+  status       String       @default("SENT") // SENT, DELIVERED, READ
+  isStarred    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+}
+
+model WhatsAppTemplate {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  category     String   // LEAD_INTRO, VISIT_REMINDER, BOOKING_CONFIRM, PAYMENT_REMINDER, WELCOME_MSG, MAINTENANCE_NOTICE, FESTIVAL_GREETINGS
+  title        String
+  body         String
+  variables    String?  // JSON string array of variable names e.g. ["name", "project", "price"]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  automations  WhatsAppAutomation[]
+}
+
+model WhatsAppAutomation {
+  id           String            @id @default(uuid())
+  tenantId     String
+  tenant       Tenant            @relation(fields: [tenantId], references: [id])
+  trigger      String            // LEAD_CREATED, LEAD_ASSIGNED, VISIT_SCHEDULED, BOOKING_COMPLETED, PAYMENT_RECEIVED
+  action       String            // SEND_WHATSAPP, ASSIGN_TASK, CREATE_REMINDER, NOTIFY_MANAGER
+  templateId   String?
+  template     WhatsAppTemplate? @relation(fields: [templateId], references: [id])
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+}
+
+model WhatsAppAuditLog {
+  id           String        @id @default(uuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  action       String        // MESSAGE_SENT, MESSAGE_DELETED, TEMPLATE_USED, AUTOMATION_TRIGGERED, CONVERSATION_ASSIGNED
+  chatId       String?
+  chat         WhatsAppChat? @relation(fields: [chatId], references: [id])
+  details      String?
+  timestamp    DateTime      @default(now())
 }

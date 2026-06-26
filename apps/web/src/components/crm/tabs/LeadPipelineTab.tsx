@@ -2,6 +2,8 @@
 
 import { useCrmStore, LeadStage } from '@/store/crmStore';
 import { Target, GripVertical, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+
 
 const STAGES: { stage: LeadStage; color: string; border: string }[] = [
   { stage: 'Lead', color: 'bg-[#A1A1AA]', border: 'border-[#A1A1AA]' },
@@ -33,7 +35,7 @@ export function LeadPipelineTab() {
     <div className="p-8 h-full flex flex-col">
       <div className="flex items-center justify-between mb-6 shrink-0">
         <h3 className="text-sm font-bold text-white flex items-center gap-2"><Target size={16} className="text-[#00E5FF]"/> Sales Pipeline Kanban</h3>
-        <button className="flex items-center gap-1 text-[10px] text-[#00E5FF] font-bold px-3 py-1.5 bg-[#00E5FF]/10 border border-[#00E5FF]/30 rounded hover:bg-[#00E5FF]/20 transition-colors">
+        <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="flex items-center gap-1 text-[10px] text-[#00E5FF] font-bold px-3 py-1.5 bg-[#00E5FF]/10 border border-[#00E5FF]/30 rounded hover:bg-[#00E5FF]/20 transition-colors">
           <Plus size={12}/> New Deal
         </button>
       </div>

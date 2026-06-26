@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Building2, Search, Filter, Layers, DoorOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { QuickFilterMenu } from '@/components/ui/QuickFilterMenu';
 
 interface UnitNode {
   id: string;
@@ -32,6 +33,7 @@ export default function ResidentDirectoryPage() {
   const [residents, setResidents] = useState<Resident[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('All Roles');
 
   useEffect(() => {
     fetchResidents();
@@ -54,10 +56,12 @@ export default function ResidentDirectoryPage() {
     }
   };
 
-  const filteredResidents = residents.filter(r => 
-    r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredResidents = residents.filter(r => {
+    const matchesSearch = r.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (roleFilter === 'All Roles') return matchesSearch;
+    return matchesSearch && r.role?.toLowerCase() === roleFilter.toLowerCase();
+  });
 
   return (
     <div className="w-full h-[calc(100vh-64px)] bg-[#0A0C10] overflow-y-auto font-sans p-6">
@@ -85,9 +89,7 @@ export default function ResidentDirectoryPage() {
               className="pl-10 bg-[#1A1A1A] border-[#3F3F46] text-white focus:ring-blue-500"
             />
           </div>
-          <Button variant="outline" className="border-[#3F3F46] text-neutral-300 hover:bg-[#2A2A30]">
-            <Filter className="w-4 h-4 mr-2" /> Filters
-          </Button>
+          <QuickFilterMenu value={roleFilter} onChange={setRoleFilter} options={['All Roles', 'Owner', 'Tenant', 'Admin']} />
         </div>
 
         {/* Directory List */}

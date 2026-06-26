@@ -1,79 +1,56 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { 
+  Lead, Customer, Broker, Campaign, SiteVisit, Negotiation, Reservation, Booking, LeadStage,
+  Activity, EmailMessage, WhatsAppMessage, Automation, LandingPage, Asset, AudienceSegment, Referral, SmsCampaign,
+  Agency, Commission, BrokerPayment, ProjectAllocation, CorporateSales, BrokerCompliance,
+  initialLeads, initialCustomers, initialBrokers, initialCampaigns, initialSiteVisits, initialBookings, initialNegotiations, initialReservations, initialActivities, initialEmails, initialWhatsApp,
+  initialAutomations, initialLandingPages, initialAssets, initialAudiences, initialReferrals, initialSmsCampaigns,
+  initialAgencies, initialCommissions, initialBrokerPayments, initialProjectAllocations, initialCorporateSales, initialBrokerCompliance
+} from '@/lib/crmMockData';
 
-export type PipelineCategory = 'New Leads' | 'Qualified Leads' | 'Site Visits' | 'Negotiations' | 'Bookings' | 'Won Deals' | 'Lost Deals' | 'Leasing Prospects' | 'Corporate Clients' | 'Channel Partners' | 'Brokers';
+export type CrmFolder = 
+  | "HOT_LEADS" 
+  | "ALL_LEADS" 
+  | "QUALIFIED_LEADS" 
+  | "SITE_VISITS" 
+  | "NEGOTIATIONS" 
+  | "BOOKINGS" 
+  | "CUSTOMERS" 
+  | "BROKERS" 
+  | "CAMPAIGNS"
+  | "CALLS"
+  | "TASKS"
+  | "EMAILS"
+  | "WHATSAPP"
+  | "LEAD_CAPTURE"
+  | "LANDING_PAGES"
+  | "ASSETS"
+  | "AUDIENCES"
+  | "REFERRALS"
+  | "SMS"
+  | "AGENCIES"
+  | "BROKER_WORKSPACE"
+  | "AUTOMATIONS"
+  | "EMAIL_MARKETING"
+  | "SMS_CAMPAIGNS"
+  | "MARKETING_ANALYTICS"
+  | "COMMISSIONS"
+  | "BROKER_PAYMENTS"
+  | "PARTNER_PORTAL"
+  | "PROJECT_ALLOCATIONS"
+  | "BROKER_PERFORMANCE"
+  | "PARTNER_MARKETING"
+  | "CORPORATE_SALES"
+  | "BROKER_COMPLIANCE";
 
-export type LeadStage = 'Lead' | 'Qualified' | 'Interested' | 'Visit Scheduled' | 'Negotiation' | 'Booked' | 'Won' | 'Lost';
-
-export interface SalesInsight {
-  id: string;
-  type: 'Probability' | 'Action' | 'Risk' | 'Forecast' | 'Broker Performance';
-  message: string;
-  metric?: string;
-  actionLabel?: string;
-  isUrgent?: boolean;
-}
-
-export interface CrmEvent {
-  id: string;
-  entityId: string;
-  date: string;
-  message: string;
-  type: 'Lead Created' | 'Visit Completed' | 'Booking Confirmed' | 'Commission Released' | 'Call Logged';
-}
-
-export interface CrmEntity {
-  id: string;
-  name: string;
-  category: PipelineCategory;
-  stage: LeadStage;
-  
-  // Financials
-  potentialValue: number; // In currency
-  probability: number; // Percentage
-  
-  // Meta
-  assignedBroker: string;
-  lastContact: string;
-  source: string;
-  
-  insights: SalesInsight[];
-}
-
-// Command Center Additional Types
-export interface LifecycleStage {
-  id: string;
-  name: string;
-  value: number;
-  convToNext: number | null;
-}
-
-export interface TopProject {
-  id: string;
-  name: string;
-  leads: number;
-  visits: number;
-  revenue: number;
-  conv: number;
-}
-
-export interface SalesLeader {
-  id: string;
-  name: string;
-  role: string;
-  revenue: number;
-  conv: number;
-  avatarUrl?: string;
-  status: 'online' | 'offline' | 'busy';
-}
-
-// System Level Stats
 export interface CrmSystemStats {
   pipelineValue: number;
   activeLeads: number;
   monthlyBookings: number;
-  conversionRate: number; // Percentage
+  conversionRate: number; 
   revenueGenerated: number;
-  // New Command Center Stats
+  
   totalLeads: number;
   totalLeadsChange: number;
   hotLeads: number;
@@ -82,237 +59,607 @@ export interface CrmSystemStats {
   siteVisits: number;
   todaysLeads: number;
   followUps: number;
-  lifecycleStages: LifecycleStage[];
-  topProjects: TopProject[];
-  salesLeaders: SalesLeader[];
+  
+  // New Communication KPIs
+  totalCalls: number;
+  totalTasks: number;
+  totalEmails: number;
+  totalWhatsApp: number;
+  avgResponseTime: string;
+  followUpCompliance: number;
+  
+  lifecycleStages: { id: string; name: string; value: number; convToNext: number | null }[];
+  topProjects: { id: string; name: string; leads: number; visits: number; revenue: number; conv: number }[];
+  salesLeaders: { id: string; name: string; role: string; revenue: number; conv: number; status: string }[];
 }
 
 interface CrmState {
-  entities: CrmEntity[];
-  events: CrmEvent[];
+  leads: Lead[];
+  customers: Customer[];
+  brokers: Broker[];
+  campaigns: Campaign[];
+  siteVisits: SiteVisit[];
+  negotiations: Negotiation[];
+  reservations: Reservation[];
+  bookings: Booking[];
+  activities: Activity[];
+  emails: EmailMessage[];
+  whatsappChats: WhatsAppMessage[];
+  
+  // Marketing & Automation Models
+  automations: Automation[];
+  landingPages: LandingPage[];
+  assets: Asset[];
+  audiences: AudienceSegment[];
+  referrals: Referral[];
+  smsCampaigns: SmsCampaign[];
+  
+  // Partner Ecosystem Models
+  agencies: Agency[];
+  commissions: Commission[];
+  brokerPayments: BrokerPayment[];
+  projectAllocations: ProjectAllocation[];
+  corporateSales: CorporateSales[];
+  brokerCompliance: BrokerCompliance[];
+
   stats: CrmSystemStats;
+  
   activeEntityId: string | null;
   activeTab: string;
-  activeFolder: string;
+  activeFolder: CrmFolder;
   
-  setActiveEntity: (id: string) => void;
+  // Global Modal State
+  globalModalOpen: boolean;
+  globalModalContext: string;
+  openGlobalModal: (context: string) => void;
+  closeGlobalModal: () => void;
+  
+  setActiveEntity: (id: string | null) => void;
   setActiveTab: (tabId: string) => void;
-  setActiveFolder: (folderId: string) => void;
+  setActiveFolder: (folderId: CrmFolder) => void;
+  
+  addActivity: (activity: Omit<Activity, 'id'>) => void;
+  createTask: (task: Omit<Activity, 'id' | 'type'>) => void;
+  completeTask: (id: string) => void;
+  logCall: (call: Omit<Activity, 'id' | 'type'>) => void;
+  sendEmail: (email: Omit<EmailMessage, 'id'>) => void;
+  sendWhatsApp: (msg: Omit<WhatsAppMessage, 'id'>) => void;
+  createLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'lastContactAt' | 'stage' | 'winProbability'>) => void;
+  
   moveLeadStage: (id: string, newStage: LeadStage) => void;
-
-  // Async Actions
-  fetchLeads: (folder?: string) => Promise<void>;
-  fetchLeadDetails: (id: string) => Promise<any>;
-  updateLeadStatusAPI: (id: string, status: string) => Promise<void>;
+  createSiteVisit: (visit: Omit<SiteVisit, 'id'>) => void;
+  updateSiteVisitStatus: (id: string, status: SiteVisit['status']) => void;
+  startNegotiation: (neg: Omit<Negotiation, 'id'>) => void;
+  updateNegotiationStatus: (id: string, status: Negotiation['status']) => void;
+  createReservation: (res: Omit<Reservation, 'id'>) => void;
+  createBooking: (booking: Omit<Booking, 'id'>) => void;
+  updateBookingStatus: (id: string, status: Booking['status']) => void;
+  recalculateLeadScore: (id: string) => void;
+  
+  recalculateStats: () => void;
 }
 
-const mockStats: CrmSystemStats = {
-  pipelineValue: 48500000, 
-  activeLeads: 1240,
-  monthlyBookings: 12,
-  conversionRate: 4.8,
-  revenueGenerated: 184500000,
+const computeStats = (leads: Lead[] = [], bookings: Booking[] = [], siteVisits: SiteVisit[] = [], activities: Activity[] = [], emails: EmailMessage[] = [], whatsappChats: WhatsAppMessage[] = []): CrmSystemStats => {
+  const activeLeads = leads.filter(l => l.stage !== 'WON' && l.stage !== 'LOST');
+  const wonLeads = leads.filter(l => l.stage === 'WON');
   
-  totalLeads: 2450,
-  totalLeadsChange: 4,
-  hotLeads: 142,
-  qualified: 380,
-  qualifiedPercentage: 8.2,
-  siteVisits: 84,
-  todaysLeads: 24,
-  followUps: 18,
+  const pipelineValue = activeLeads.reduce((sum, l) => sum + l.budget, 0);
+  const revenueGenerated = bookings.reduce((sum, b) => sum + b.totalValue, 0);
+  const conversionRate = leads.length > 0 ? (wonLeads.length / leads.length) * 100 : 0;
+  
+  const lifecycleStages = ['NEW', 'CONTACTED', 'QUALIFIED', 'VISIT SCHEDULED', 'VISIT COMPLETED', 'NEGOTIATION', 'BOOKING', 'WON', 'LOST'].map((stage, idx, arr) => {
+    const value = leads.filter(l => l.stage === stage).length;
+    const nextValue = arr[idx + 1] ? leads.filter(l => l.stage === arr[idx + 1]).length : 0;
+    const convToNext = value > 0 ? Math.round((nextValue / value) * 100) : null;
+    return {
+      id: stage.toLowerCase().replace(' ', '_'),
+      name: stage,
+      value,
+      convToNext: idx === arr.length - 1 ? null : convToNext
+    };
+  });
 
-  lifecycleStages: [
-    { id: 'new', name: 'NEW LEAD', value: 2450, convToNext: 62 },
-    { id: 'contacted', name: 'CONTACTED', value: 1519, convToNext: 25 },
-    { id: 'qualified', name: 'QUALIFIED', value: 380, convToNext: 22 },
-    { id: 'site_visit', name: 'SITE VISIT', value: 84, convToNext: 40 },
-    { id: 'negotiation', name: 'NEGOTIATION', value: 34, convToNext: 35 },
-    { id: 'won', name: 'WON', value: 12, convToNext: null },
-  ],
+  return {
+    pipelineValue,
+    activeLeads: activeLeads.length,
+    monthlyBookings: bookings.length,
+    conversionRate: Math.round(conversionRate * 10) / 10,
+    revenueGenerated,
+    totalLeads: leads.length,
+    totalLeadsChange: 4, 
+    hotLeads: leads.filter(l => l.score > 80 && l.stage !== 'WON' && l.stage !== 'LOST').length,
+    qualified: leads.filter(l => l.stage === 'QUALIFIED').length,
+    qualifiedPercentage: leads.length > 0 ? Math.round((leads.filter(l => l.stage === 'QUALIFIED').length / leads.length) * 100) : 0,
+    siteVisits: siteVisits.length,
+    todaysLeads: leads.filter(l => new Date(l.createdAt).toDateString() === new Date().toDateString()).length,
+    followUps: leads.filter(l => l.stage !== 'WON' && l.stage !== 'LOST').length,
+    
+    totalCalls: (activities || []).filter(a => a.type === 'Call').length,
+    totalTasks: (activities || []).filter(a => a.type === 'Task').length,
+    totalEmails: (emails || []).length,
+    totalWhatsApp: (whatsappChats || []).length,
+    avgResponseTime: '18m',
+    followUpCompliance: 92,
 
-  topProjects: [
-    { id: 'p1', name: 'Skyline Plaza', leads: 840, visits: 42, revenue: 18200000, conv: 5.2 },
-    { id: 'p2', name: 'Marina Heights', leads: 610, visits: 28, revenue: 14500000, conv: 4.6 },
-    { id: 'p3', name: 'The Reserve', leads: 340, visits: 14, revenue: 15800000, conv: 4.1 },
-  ],
-
-  salesLeaders: [
-    { id: 'u1', name: 'Alex Rivera', role: 'SENIOR SALES ASSOC.', revenue: 12400000, conv: 6.8, status: 'online' },
-    { id: 'u2', name: 'Sarah Chen', role: 'PORTFOLIO MANAGER', revenue: 10200000, conv: 5.4, status: 'online' },
-    { id: 'u3', name: 'James Wilson', role: 'EXTERNAL BROKER', revenue: 8100000, conv: 3.9, status: 'busy' },
-  ],
+    lifecycleStages,
+    topProjects: [
+      { id: 'p1', name: 'Skyline Plaza', leads: 840, visits: 42, revenue: 18200000, conv: 5.2 },
+      { id: 'p2', name: 'Marina Heights', leads: 610, visits: 28, revenue: 14500000, conv: 4.6 },
+      { id: 'p3', name: 'The Reserve', leads: 340, visits: 14, revenue: 15800000, conv: 4.1 },
+    ],
+    salesLeaders: [
+      { id: 'u1', name: 'Alex Rivera', role: 'SENIOR SALES ASSOC.', revenue: 12400000, conv: 6.8, status: 'online' },
+      { id: 'u2', name: 'Sarah Chen', role: 'PORTFOLIO MANAGER', revenue: 10200000, conv: 5.4, status: 'online' },
+      { id: 'u3', name: 'James Wilson', role: 'EXTERNAL BROKER', revenue: 8100000, conv: 3.9, status: 'busy' },
+    ]
+  };
 };
 
-const mockEntities: CrmEntity[] = [
-  {
-    id: 'lead-001',
-    name: 'Anjali Desai',
-    category: 'Qualified Leads',
-    stage: 'Qualified',
-    potentialValue: 12500000,
-    probability: 45,
-    assignedBroker: 'Rahul Sharma',
-    lastContact: '2 hours ago',
-    source: 'Facebook Ad',
-    insights: [
-      { id: 'in-1', type: 'Action', message: 'Schedule follow-up call within 48 hours to discuss pricing.', actionLabel: 'Schedule Call' },
-      { id: 'in-2', type: 'Probability', message: 'Lead matches Ideal Customer Profile (ICP).', metric: '45% Close Rate' }
-    ]
-  },
-  {
-    id: 'lead-002',
-    name: 'TechCorp India',
-    category: 'Corporate Clients',
-    stage: 'Negotiation',
-    potentialValue: 450000000,
-    probability: 87,
-    assignedBroker: 'Priya Patel',
-    lastContact: '1 day ago',
-    source: 'LinkedIn B2B',
-    insights: [
-      { id: 'in-3', type: 'Forecast', message: 'Lead L-002 has 87% booking probability. Expected close this week.', metric: 'High Intent', isUrgent: true, actionLabel: 'Generate Proposal' }
-    ]
-  },
-  {
-    id: 'lead-003',
-    name: 'Vikram Singh',
-    category: 'Site Visits',
-    stage: 'Visit Scheduled',
-    potentialValue: 28000000,
-    probability: 60,
-    assignedBroker: 'Rahul Sharma',
-    lastContact: '5 mins ago',
-    source: 'Property Finder',
-    insights: [
-      { id: 'in-4', type: 'Broker Performance', message: 'Broker Rahul has highest conversion rate for this property type.', metric: '18% Conv.' }
-    ]
-  },
-  {
-    id: 'lead-004',
-    name: 'Neha Kapoor',
-    category: 'Bookings',
-    stage: 'Booked',
-    potentialValue: 15500000,
-    probability: 100,
-    assignedBroker: 'Amit Kumar',
-    lastContact: '3 days ago',
-    source: 'Referral',
-    insights: []
-  }
-];
+export const useCrmStore = create<CrmState>()(
+  persist(
+    (set, get) => ({
+      leads: initialLeads,
+      customers: initialCustomers,
+      brokers: initialBrokers,
+      campaigns: initialCampaigns,
+      siteVisits: initialSiteVisits,
+      negotiations: initialNegotiations,
+      reservations: initialReservations,
+      bookings: initialBookings,
+      activities: initialActivities,
+      emails: initialEmails,
+      whatsappChats: initialWhatsApp,
+      
+      automations: initialAutomations,
+      landingPages: initialLandingPages,
+      assets: initialAssets,
+      audiences: initialAudiences,
+      referrals: initialReferrals,
+      smsCampaigns: initialSmsCampaigns,
+      
+      agencies: initialAgencies,
+      commissions: initialCommissions,
+      brokerPayments: initialBrokerPayments,
+      projectAllocations: initialProjectAllocations,
+      corporateSales: initialCorporateSales,
+      brokerCompliance: initialBrokerCompliance,
 
-const mockEvents: CrmEvent[] = [
-  { id: 'ev-1', entityId: 'lead-002', date: 'Today, 10:45 AM', message: 'Commercial Lease Proposal Sent', type: 'Call Logged' },
-  { id: 'ev-2', entityId: 'lead-003', date: 'Today, 09:15 AM', message: 'Site Visit Confirmed for Tomorrow 2PM', type: 'Visit Completed' },
-  { id: 'ev-3', entityId: 'lead-004', date: 'Yesterday', message: 'Booking Amount Received (₹5,00,000)', type: 'Booking Confirmed' },
-  { id: 'ev-4', entityId: 'lead-001', date: '2 Days Ago', message: 'Lead Created via Campaign: Summer Launch', type: 'Lead Created' }
-];
+      stats: computeStats(initialLeads, initialBookings, initialSiteVisits, initialActivities, initialEmails, initialWhatsApp),
+      
+      activeEntityId: null,
+      activeTab: 'overview',
+      activeFolder: 'HOT_LEADS',
+      
+      globalModalOpen: false,
+      globalModalContext: '',
+      
+      openGlobalModal: (context) => set({ globalModalOpen: true, globalModalContext: context }),
+      closeGlobalModal: () => set({ globalModalOpen: false, globalModalContext: '' }),
+      
+      setActiveEntity: (id) => set({ activeEntityId: id }),
+      setActiveTab: (tabId) => set({ activeTab: tabId }),
+      setActiveFolder: (folderId) => set({ activeFolder: folderId }),
 
-export const useCrmStore = create<CrmState>((set) => ({
-  entities: mockEntities,
-  events: mockEvents,
-  stats: mockStats,
-  activeEntityId: null,
-  activeTab: 'overview',
-  activeFolder: 'hot_leads',
-  
-  setActiveEntity: (id) => set({ activeEntityId: id }),
-  setActiveTab: (tabId) => set({ activeTab: tabId }),
-  setActiveFolder: (folderId) => {
-    set({ activeFolder: folderId });
-    // Auto-fetch leads when folder changes
-    useCrmStore.getState().fetchLeads(folderId);
-  },
-  moveLeadStage: (id, newStage) => {
-    // Optimistic UI update
-    set((state) => ({
-      entities: state.entities.map(e => {
-        if (e.id !== id) return e;
-        let newProb = e.probability;
-        if (newStage === 'Lead') newProb = 10;
-        if (newStage === 'Qualified') newProb = 30;
-        if (newStage === 'Visit Scheduled') newProb = 50;
-        if (newStage === 'Negotiation') newProb = 80;
-        if (newStage === 'Booked' || newStage === 'Won') newProb = 100;
-        if (newStage === 'Lost') newProb = 0;
-        return { ...e, stage: newStage, probability: newProb };
+      recalculateStats: () => {
+        const state = get();
+        set({ stats: computeStats(
+          state.leads || [], 
+          state.bookings || [], 
+          state.siteVisits || [], 
+          state.activities || [], 
+          state.emails || [], 
+          state.whatsappChats || []
+        ) });
+      },
+      
+      addActivity: (activity) => {
+        set(state => ({
+          activities: [{ ...activity, id: 'act-' + Math.random().toString(36).substr(2, 9) }, ...state.activities]
+        }));
+      },
+
+      createTask: (task) => {
+        set(state => ({
+          activities: [{ ...task, type: 'Task', id: 'task-' + Math.random().toString(36).substr(2, 9) }, ...state.activities]
+        }));
+      },
+
+      completeTask: (id) => {
+        set(state => ({
+          activities: state.activities.map(a => a.id === id ? { ...a, status: 'COMPLETED', completedAt: new Date().toISOString() } : a)
+        }));
+      },
+
+      logCall: (call) => {
+        set(state => ({
+          activities: [{ ...call, type: 'Call', id: 'call-' + Math.random().toString(36).substr(2, 9) }, ...state.activities]
+        }));
+      },
+
+      sendEmail: (email) => {
+        set(state => ({
+          emails: [{ ...email, id: 'email-' + Math.random().toString(36).substr(2, 9) }, ...state.emails]
+        }));
+        // Log activity
+        get().addActivity({
+          leadId: email.leadId,
+          type: 'Email',
+          title: `Email Sent: ${email.subject}`,
+          description: email.body,
+          assignedTo: 'Current User',
+          createdAt: new Date().toISOString(),
+          status: 'COMPLETED',
+          priority: 'LOW'
+        });
+      },
+
+      sendWhatsApp: (msg) => {
+        set(state => ({
+          whatsappChats: [{ ...msg, id: 'wa-' + Math.random().toString(36).substr(2, 9) }, ...state.whatsappChats]
+        }));
+      },
+      
+      createLead: (leadData) => {
+        const id = 'lead-' + Math.random().toString(36).substr(2, 9);
+        const newLead: Lead = {
+          ...leadData,
+          id,
+          createdAt: new Date().toISOString(),
+          lastContactAt: new Date().toISOString(),
+          stage: 'NEW',
+          winProbability: 10
+        };
+
+        set(state => ({
+          leads: [newLead, ...state.leads]
+        }));
+
+        get().addActivity({
+          leadId: id,
+          type: 'System',
+          title: 'Lead Created',
+          description: `Lead captured via ${leadData.source || 'Manual'}.`,
+          assignedTo: leadData.assignedExecutive,
+          createdAt: new Date().toISOString(),
+          status: 'COMPLETED',
+          priority: 'LOW'
+        });
+
+        // AUTOMATION: Create Follow-up Task after 24 hours
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        get().createTask({
+          leadId: id,
+          title: 'Initial Follow-up Call',
+          description: 'Call the new lead to discuss requirements.',
+          assignedTo: leadData.assignedExecutive,
+          createdAt: new Date().toISOString(),
+          dueDate: tomorrow.toISOString(),
+          status: 'PENDING',
+          priority: 'HIGH'
+        });
+
+        get().recalculateLeadScore(id);
+        get().recalculateStats();
+      },
+
+      recalculateLeadScore: (id) => {
+        const lead = get().leads.find(l => l.id === id);
+        if (!lead) return;
+
+        const activities = get().activities.filter(a => a.leadId === id);
+        let score = 20; // Base score for new leads
+
+        // Positive Signals
+        if (activities.some(a => a.type === 'Email' && a.status === 'COMPLETED')) score += 10;
+        if (activities.some(a => a.type === 'Meeting')) score += 15;
+        if (get().siteVisits.some(sv => sv.leadId === id)) score += 20;
+        if (get().siteVisits.some(sv => sv.leadId === id && sv.status === 'COMPLETED')) score += 15;
+        if (get().negotiations.some(n => n.leadId === id)) score += 10;
+        if (get().reservations.some(r => r.leadId === id)) score += 10;
+
+        // Negative Signals
+        const lastContact = new Date(lead.lastContactAt);
+        const daysInactive = Math.floor((new Date().getTime() - lastContact.getTime()) / (1000 * 3600 * 24));
+        if (daysInactive > 7) score -= 10;
+        if (daysInactive > 14) score -= 15;
+        if (get().siteVisits.some(sv => sv.leadId === id && sv.status === 'CANCELLED')) score -= 15;
+
+        // Cap score between 0 and 100
+        score = Math.max(0, Math.min(100, score));
+
+        set(state => ({
+          leads: state.leads.map(l => l.id === id ? { ...l, score, isHot: score > 80 } : l)
+        }));
+      },
+
+      moveLeadStage: (id, newStage) => {
+        const state = get();
+        const lead = state.leads.find(l => l.id === id);
+        if (!lead) return;
+        const oldStage = lead.stage;
+
+        set(state => {
+          const leads = state.leads.map(l => {
+            if (l.id !== id) return l;
+            let newProb = l.winProbability;
+            if (newStage === 'NEW') newProb = 10;
+            if (newStage === 'QUALIFIED') newProb = 30;
+            if (newStage === 'VISIT SCHEDULED') newProb = 50;
+            if (newStage === 'NEGOTIATION') newProb = 80;
+            if (newStage === 'BOOKING' || newStage === 'WON') newProb = 100;
+            if (newStage === 'LOST') newProb = 0;
+            return { ...l, stage: newStage, winProbability: newProb };
+          });
+          return { leads };
+        });
+
+        get().addActivity({
+          leadId: id,
+          type: 'System',
+          title: 'Stage Changed',
+          createdAt: new Date().toISOString(),
+          description: `Lead moved from ${oldStage} to ${newStage}`,
+          assignedTo: 'Current User',
+          status: 'COMPLETED',
+          priority: 'LOW'
+        });
+
+        // CROSS-MODULE AUTOMATION
+        // If moved to VISIT SCHEDULED but no site visit exists
+        if (newStage === 'VISIT SCHEDULED' && !state.siteVisits.some(v => v.leadId === id && v.status === 'SCHEDULED')) {
+           get().createSiteVisit({
+             leadId: id,
+             projectId: lead.interestedProjectId || 'PROJ-1',
+             date: new Date(Date.now() + 86400000).toISOString(), // tomorrow
+             time: '14:00',
+             executive: lead.assignedExecutive,
+             status: 'SCHEDULED',
+             notes: 'Auto-generated site visit from stage movement.'
+           });
+        }
+        
+        // If moved to NEGOTIATION but no active negotiation exists
+        if (newStage === 'NEGOTIATION' && !state.negotiations.some(n => n.leadId === id && n.status === 'PENDING')) {
+           get().startNegotiation({
+             leadId: id,
+             unitId: 'AUTO-UNIT',
+             quotedPrice: lead.budget,
+             offerPrice: lead.budget * 0.98,
+             discount: lead.budget * 0.02,
+             discountPercentage: 2,
+             marginImpact: 1.5,
+             status: 'PENDING',
+             notes: 'Auto-generated negotiation from stage movement.'
+           });
+        }
+
+        get().recalculateStats();
+      },
+
+      createSiteVisit: (visit) => {
+        set(state => ({
+          siteVisits: [{ ...visit, id: 'visit-' + Math.random().toString(36).substr(2, 9) }, ...state.siteVisits]
+        }));
+        const lead = get().leads.find(l => l.id === visit.leadId);
+        if (lead && lead.stage !== 'VISIT SCHEDULED' && lead.stage !== 'VISIT COMPLETED' && lead.stage !== 'NEGOTIATION' && lead.stage !== 'BOOKING' && lead.stage !== 'WON') {
+            get().moveLeadStage(visit.leadId, 'VISIT SCHEDULED');
+        } else {
+            get().addActivity({
+              leadId: visit.leadId,
+              type: 'System',
+              title: 'Visit Scheduled',
+              createdAt: new Date().toISOString(),
+              description: `Site visit scheduled for ${new Date(visit.date).toLocaleDateString()} at ${visit.time}`,
+              assignedTo: 'Current User',
+              status: 'COMPLETED',
+              priority: 'LOW'
+            });
+
+            // AUTOMATION: Create Reminder Task 24h before visit
+            const visitDate = new Date(visit.date);
+            visitDate.setDate(visitDate.getDate() - 1); // 24h before
+            get().createTask({
+              leadId: visit.leadId,
+              title: 'Site Visit Reminder',
+              description: `Remind lead about their site visit tomorrow at ${visit.time}.`,
+              assignedTo: 'Current User',
+              createdAt: new Date().toISOString(),
+              dueDate: visitDate.toISOString(),
+              status: 'PENDING',
+              priority: 'MEDIUM'
+            });
+
+            get().recalculateStats();
+        }
+      },
+
+      updateSiteVisitStatus: (id, status) => {
+        let leadId = '';
+        set(state => ({
+          siteVisits: state.siteVisits.map(v => {
+            if (v.id === id) {
+              leadId = v.leadId;
+              return { ...v, status };
+            }
+            return v;
+          })
+        }));
+        if (status === 'COMPLETED' && leadId) {
+          get().moveLeadStage(leadId, 'VISIT COMPLETED');
+        }
+      },
+
+      startNegotiation: (neg) => {
+        set(state => ({
+          negotiations: [{ ...neg, id: 'neg-' + Math.random().toString(36).substr(2, 9) }, ...state.negotiations]
+        }));
+        const lead = get().leads.find(l => l.id === neg.leadId);
+        if (lead && lead.stage !== 'NEGOTIATION' && lead.stage !== 'BOOKING' && lead.stage !== 'WON') {
+            get().moveLeadStage(neg.leadId, 'NEGOTIATION');
+        } else {
+            get().addActivity({
+              leadId: neg.leadId,
+              type: 'System',
+              title: 'Negotiation Started',
+              createdAt: new Date().toISOString(),
+              description: `Negotiation started for unit ${neg.unitId}`,
+              assignedTo: 'Current User',
+              status: 'COMPLETED',
+              priority: 'LOW'
+            });
+            get().recalculateStats();
+        }
+      },
+
+      updateNegotiationStatus: (id, status) => {
+        set(state => ({
+          negotiations: state.negotiations.map(n => n.id === id ? { ...n, status } : n)
+        }));
+      },
+
+      createReservation: (res) => {
+        set(state => ({
+          reservations: [{ ...res, id: 'res-' + Math.random().toString(36).substr(2, 9) }, ...state.reservations]
+        }));
+        get().moveLeadStage(res.leadId, 'BOOKING');
+      },
+
+      createBooking: (booking) => {
+        set(state => ({
+          bookings: [{ ...booking, id: 'booking-' + Math.random().toString(36).substr(2, 9), customerId: '' }, ...state.bookings]
+        }));
+        get().moveLeadStage(booking.leadId, 'BOOKING');
+      },
+
+      updateBookingStatus: (id, status) => {
+        let booking = get().bookings.find(b => b.id === id);
+        if (!booking) return;
+
+        set(state => ({
+          bookings: state.bookings.map(b => b.id === id ? { ...b, status } : b)
+        }));
+
+        if (status === 'COMPLETED') {
+            // Create Customer record automatically
+            const lead = get().leads.find(l => l.id === booking.leadId);
+            if (lead && !get().customers.some(c => c.leadId === lead.id)) {
+                const custId = 'cust-' + Math.random().toString(36).substr(2, 9);
+                set(state => ({
+                  customers: [{
+                    id: custId,
+                    name: lead.name,
+                    phone: lead.phone,
+                    email: lead.email,
+                    kycStatus: 'PENDING',
+                    totalInvestment: booking!.totalValue,
+                    joinedAt: new Date().toISOString(),
+                    leadId: lead.id
+                  }, ...state.customers]
+                }));
+                // Link customerId to booking
+                set(state => ({
+                    bookings: state.bookings.map(b => b.id === id ? { ...b, customerId: custId } : b)
+                }));
+                get().moveLeadStage(lead.id, 'WON');
+                
+                // MARKETING ATTRIBUTION
+                if (lead.campaignId) {
+                  set(state => ({
+                    campaigns: state.campaigns.map(c => {
+                      if (c.id === lead.campaignId) {
+                        const newRevenue = c.revenue + booking!.totalValue;
+                        const newBookings = c.bookings + 1;
+                        return { 
+                          ...c, 
+                          revenue: newRevenue, 
+                          bookings: newBookings,
+                          roi: c.spend > 0 ? ((newRevenue - c.spend) / c.spend) * 100 : 0,
+                          costPerBooking: newBookings > 0 ? c.spend / newBookings : 0
+                        };
+                      }
+                      return c;
+                    })
+                  }));
+                }
+
+                // BROKER COMMISSION ATTRIBUTION
+                if (lead.brokerId || lead.agencyId) {
+                  const broker = lead.brokerId ? get().brokers.find(b => b.id === lead.brokerId) : null;
+                  const commissionRate = broker ? broker.commissionRate : 2; // Default 2% if not found
+                  const commissionAmount = booking!.bookingAmount * (commissionRate / 100);
+
+                  const newCommission: Commission = {
+                    id: 'comm-' + Math.random().toString(36).substr(2, 9),
+                    bookingId: id,
+                    leadId: lead.id,
+                    brokerId: lead.brokerId,
+                    agencyId: lead.agencyId,
+                    amount: commissionAmount,
+                    commissionType: 'PERCENTAGE',
+                    status: 'PENDING',
+                    createdAt: new Date().toISOString()
+                  };
+
+                  set(state => ({
+                    commissions: [newCommission, ...state.commissions]
+                  }));
+
+                  // Update Broker Stats if broker exists
+                  if (broker) {
+                    set(state => ({
+                      brokers: state.brokers.map(b => {
+                        if (b.id === broker.id) {
+                          return {
+                            ...b,
+                            dealsClosed: b.dealsClosed + 1,
+                            revenueGenerated: b.revenueGenerated + booking!.totalValue,
+                            commissionEarned: b.commissionEarned + commissionAmount
+                          };
+                        }
+                        return b;
+                      })
+                    }));
+                  }
+                }
+            }
+        }
+      }
+    }),
+    {
+      name: 'propertyhub-crm-storage',
+      partialize: (state) => ({ 
+        activeFolder: state.activeFolder,
+        leads: state.leads,
+        customers: state.customers,
+        siteVisits: state.siteVisits,
+        negotiations: state.negotiations,
+        bookings: state.bookings,
+        activities: state.activities,
+        emails: state.emails,
+        whatsappChats: state.whatsappChats,
+        automations: state.automations,
+        landingPages: state.landingPages,
+        assets: state.assets,
+        audiences: state.audiences,
+        referrals: state.referrals,
+        smsCampaigns: state.smsCampaigns,
+        agencies: state.agencies,
+        commissions: state.commissions,
+        brokerPayments: state.brokerPayments,
+        projectAllocations: state.projectAllocations,
+        corporateSales: state.corporateSales,
+        brokerCompliance: state.brokerCompliance
       })
-    }));
-    
-    // Convert LeadStage to backend status string
-    let backendStatus = 'NEW';
-    if (newStage === 'Lead') backendStatus = 'NEW';
-    if (newStage === 'Qualified') backendStatus = 'QUALIFIED';
-    if (newStage === 'Visit Scheduled') backendStatus = 'VISIT_SCHEDULED';
-    if (newStage === 'Negotiation') backendStatus = 'NEGOTIATION';
-    if (newStage === 'Booked') backendStatus = 'BOOKING';
-    if (newStage === 'Won') backendStatus = 'WON';
-    if (newStage === 'Lost') backendStatus = 'LOST';
-    
-    // Call API
-    useCrmStore.getState().updateLeadStatusAPI(id, backendStatus);
-  },
-
-  // API Integration
-  fetchLeads: async (folder) => {
-    try {
-      let url = 'http://localhost:3001/api/v1/crm/leads';
-      if (folder) url += `?folder=${folder}`;
-      
-      const res = await fetch(url);
-      if (!res.ok) return;
-      const data = await res.json();
-      
-      const mappedEntities: CrmEntity[] = data.map((dbLead: any) => ({
-        id: dbLead.id,
-        name: dbLead.name,
-        category: 'New Leads',
-        stage: dbLead.status === 'NEW' ? 'Lead' : 
-               dbLead.status === 'QUALIFIED' ? 'Qualified' :
-               dbLead.status === 'VISIT_SCHEDULED' ? 'Visit Scheduled' :
-               dbLead.status === 'NEGOTIATION' ? 'Negotiation' :
-               dbLead.status === 'BOOKING' ? 'Booked' :
-               dbLead.status === 'WON' ? 'Won' : 'Lost',
-        potentialValue: dbLead.budgetMax || 0,
-        probability: dbLead.score || 10,
-        assignedBroker: 'Unassigned',
-        lastContact: dbLead.activities?.length > 0 ? 'Recently' : 'Never',
-        source: dbLead.source,
-        insights: dbLead.nextAction && dbLead.nextAction !== 'N/A' ? [{ 
-          id: 'in-' + dbLead.id, 
-          type: 'Action', 
-          message: dbLead.nextAction,
-          actionLabel: dbLead.nextAction.includes('Call') ? 'Call' : 'Execute'
-        }] : []
-      }));
-      
-      set({ entities: mappedEntities });
-    } catch (e) {
-      console.error('Failed to fetch leads', e);
     }
-  },
+  )
+);
 
-  fetchLeadDetails: async (id) => {
-    try {
-      const res = await fetch(`http://localhost:3001/api/v1/crm/leads/${id}`);
-      if (!res.ok) return null;
-      return await res.json();
-    } catch (e) {
-      console.error('Failed to fetch lead details', e);
-      return null;
-    }
-  },
-
-  updateLeadStatusAPI: async (id, status) => {
-    try {
-      await fetch(`http://localhost:3001/api/v1/crm/leads/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
-    } catch (e) {
-      console.error('Failed to update status', e);
-    }
+// Helper Selectors to keep components clean
+export const selectFilteredLeads = (state: CrmState) => {
+  switch (state.activeFolder) {
+    case 'HOT_LEADS': return state.leads.filter(l => l.score > 80 && l.stage !== 'WON' && l.stage !== 'LOST').sort((a,b) => b.score - a.score);
+    case 'QUALIFIED_LEADS': return state.leads.filter(l => l.stage === 'QUALIFIED');
+    default: return state.leads;
   }
-}));
+};

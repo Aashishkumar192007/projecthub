@@ -9,6 +9,8 @@ import {
   Trophy
 } from 'lucide-react';
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, Tooltip } from 'recharts';
+import { toast } from 'sonner';
+
 
 export function OverviewTab() {
   const { stats } = useCrmStore();
@@ -82,12 +84,42 @@ export function OverviewTab() {
           </div>
         </div>
 
-        {/* REVENUE PIPELINE */}
+      {/* Revenue Pipeline */}
         <div className="bg-[#121212] border border-neutral-800 rounded p-4">
           <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">REVENUE PIPELINE</div>
           <div className="flex items-end justify-between">
             <span className="text-2xl font-medium text-white">{formatCurrency(stats.pipelineValue)}</span>
             <span className="text-[10px] text-neutral-500 mb-1">Conv: {stats.conversionRate}%</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Communication KPIs Row */}
+      <div className="grid grid-cols-6 gap-4">
+        <div className="bg-[#121212] border border-neutral-800 rounded p-4 border-l-2 border-l-[#00E5FF]">
+          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">CALLS MADE</div>
+          <div className="text-2xl font-medium text-white">{stats.totalCalls}</div>
+        </div>
+        <div className="bg-[#121212] border border-neutral-800 rounded p-4 border-l-2 border-l-[#00E5FF]">
+          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">EMAILS SENT</div>
+          <div className="text-2xl font-medium text-white">{stats.totalEmails}</div>
+        </div>
+        <div className="bg-[#121212] border border-neutral-800 rounded p-4 border-l-2 border-l-[#25D366]">
+          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">WHATSAPP</div>
+          <div className="text-2xl font-medium text-white">{stats.totalWhatsApp}</div>
+        </div>
+        <div className="bg-[#121212] border border-neutral-800 rounded p-4 border-l-2 border-l-amber-400">
+          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">TASKS</div>
+          <div className="text-2xl font-medium text-white">{stats.totalTasks}</div>
+        </div>
+        <div className="bg-[#121212] border border-neutral-800 rounded p-4">
+          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">AVG RESPONSE</div>
+          <div className="text-2xl font-medium text-white">{stats.avgResponseTime}</div>
+        </div>
+        <div className="bg-[#121212] border border-neutral-800 rounded p-4">
+          <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2">SLA COMPLIANCE</div>
+          <div className="flex items-end gap-2">
+            <span className="text-2xl font-medium text-green-400">{stats.followUpCompliance}%</span>
           </div>
         </div>
       </div>
@@ -134,7 +166,7 @@ export function OverviewTab() {
         <div className="bg-[#121212] border border-neutral-800 rounded p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-sm font-medium text-white">Top Performing Projects</h3>
-            <button className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">VIEW ALL</button>
+            <button onClick={(e) => { e.stopPropagation(); toast.info('Feature Coming Soon', { description: 'This action is part of the upcoming release.' }); }} className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">VIEW ALL</button>
           </div>
           
           <table className="w-full text-sm text-left">
