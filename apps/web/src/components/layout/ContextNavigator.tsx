@@ -9,16 +9,17 @@ export function ContextNavigator() {
   const isProcurement = pathname.startsWith('/procurement');
 
   const mainNavItems = [
-    { icon: LayoutDashboard, label: 'Executive', href: '/executive' },
     { icon: LayoutGrid, label: 'Dashboard', href: '/' },
-    { icon: Building, label: 'Portfolio', href: '/portfolio' },
     { icon: Building2, label: 'Properties', href: '/properties' },
-    { icon: Users, label: 'Tenants', href: '/tenants' },
     { icon: Target, label: 'CRM', href: '/crm' },
-    { icon: MessageCircle, label: 'Communications', href: '/communications' },
-    { icon: FolderGit2, label: 'Projects', href: '/projects' },
+    { icon: Users, label: 'Customers', href: '/customers' },
+    { icon: User, label: 'Residents', href: '/residents' },
     { icon: Activity, label: 'Facilities', href: '/facilities' },
-    { icon: Banknote, label: 'Revenue', href: '/revenue' },
+    { icon: FolderGit2, label: 'Projects', href: '/projects' },
+    { icon: Banknote, label: 'Finance', href: '/revenue' },
+    { icon: LayoutDashboard, label: 'Executive', href: '/executive' },
+    { icon: Building, label: 'Portfolio', href: '/portfolio' },
+    { icon: MessageCircle, label: 'Communications', href: '/communications' },
     { icon: FileText, label: 'Leases', href: '/leases' },
     { icon: FileText, label: 'Documents', href: '/documents' },
     { icon: BookCheck, label: 'Agreements', href: '/agreements' },
@@ -89,7 +90,9 @@ export function ContextNavigator() {
       <div className="flex-1 overflow-y-auto py-2">
         <nav className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (isProcurement && item.href !== '/procurement' && pathname.startsWith(item.href));
+            const isActive = pathname === item.href || 
+              (isProcurement && item.href !== '/procurement' && pathname.startsWith(item.href)) ||
+              (!isProcurement && item.href !== '/' && pathname.startsWith(item.href));
             return (
               <Link 
                 key={item.label}
