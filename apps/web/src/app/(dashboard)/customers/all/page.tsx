@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useCustomerStore } from '@/store/customerStore';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCustomerStore, computeFilteredCustomers } from '@/store/customerStore';
 import { CustomerNavigator } from '@/components/customers/CustomerNavigator';
 import { CustomerKPIs } from '@/components/customers/CustomerKPIs';
 import { CustomerFilters } from '@/components/customers/CustomerFilters';
@@ -13,11 +13,20 @@ import {
 } from 'lucide-react';
 
 export default function CustomerCommandCenter() {
-  const searchQuery = useCustomerStore(s => s.searchQuery);
+  const customers      = useCustomerStore(s => s.customers);
+  const searchQuery    = useCustomerStore(s => s.searchQuery);
   const setSearchQuery = useCustomerStore(s => s.setSearchQuery);
-  const filteredCount = useCustomerStore(s => s.getFilteredCustomers().length);
-  const resetFilters = useCustomerStore(s => s.resetFilters);
-  const filters = useCustomerStore(s => s.filters);
+  const resetFilters   = useCustomerStore(s => s.resetFilters);
+  const filters        = useCustomerStore(s => s.filters);
+  const activeCategory = useCustomerStore(s => s.activeCategory);
+  const sortField      = useCustomerStore(s => s.sortField);
+  const sortDirection  = useCustomerStore(s => s.sortDirection);
+
+  // Derive count stably – no new array created in selector
+  const filteredCount = useMemo(
+    () => computeFilteredCustomers(customers, activeCategory, searchQuery, filters, sortField, sortDirection).length,
+    [customers, activeCategory, searchQuery, filters, sortField, sortDirection]
+  );
 
   const [showFilters, setShowFilters] = useState(false);
   const [mounted, setMounted] = useState(false);
