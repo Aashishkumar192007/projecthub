@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ResidentNavigator } from '@/components/resident/ResidentNavigator';
 import { ResidentAssistant } from '@/components/resident/ResidentAssistant';
 import { ResidentHeader } from '@/components/resident/ResidentHeader';

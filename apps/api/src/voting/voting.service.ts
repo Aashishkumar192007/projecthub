@@ -1,23 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class VotingService {
-  async getPolls(tenantId: string, societyId: string) {
-    return prisma.poll.findMany({
-      where: { tenantId, societyId },
+  constructor(private prisma: PrismaService) {}
+
+  async getPolls(tenant_id: string, societyId: string) {
+    return this.prisma.poll.findMany({
+      where: { tenant_id, societyId },
       include: { options: true, votes: true }
     });
   }
 
-  async createPoll(tenantId: string, societyId: string, data: any) {
+  async createPoll(tenant_id: string, societyId: string, data: any) {
     const { options, ...pollData } = data;
-    return prisma.poll.create({
+    return this.prisma.poll.create({
       data: {
         ...pollData,
-        tenantId,
+        tenant_id,
         societyId,
         options: {
           create: options.map((opt: string) => ({ optionText: opt }))
@@ -27,9 +27,9 @@ export class VotingService {
     });
   }
 
-  async castVote(pollId: string, optionId: string, customerId: string) {
-    return prisma.vote.create({
-      data: { pollId, optionId, customerId }
+  async castVote(pollId: string, optionId: string, customer_id: string) {
+    return this.prisma.vote.create({
+      data: { pollId, optionId, customer_id }
     });
   }
 }

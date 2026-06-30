@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PreventiveMaintenanceService {
-  async getChecklists(tenantId: string) {
-    return prisma.maintenanceChecklist.findMany({ where: { tenantId }, include: { tasks: true } });
+  constructor(private prisma: PrismaService) {}
+
+  async getChecklists(tenant_id: string) {
+    return this.prisma.maintenanceChecklist.findMany({ where: { tenant_id }, include: { tasks: true } });
   }
 }

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class FacilityBookingService {
-  async getBookings(tenantId: string) {
-    return prisma.facilityBooking.findMany({
-      where: { tenantId },
+  constructor(private prisma: PrismaService) {}
+
+  async getBookings(tenant_id: string) {
+    return this.prisma.facilityBooking.findMany({
+      where: { tenant_id },
       include: {
         facility: true,
         customer: true
@@ -15,14 +15,20 @@ export class FacilityBookingService {
     });
   }
 
-  async createBooking(tenantId: string, data: any) {
-    return prisma.facilityBooking.create({
-      data: { ...data, tenantId }
+  async createBooking(tenant_id: string, data: any) {
+    const { facilityId, customerId, ...bookingData } = data;
+    return this.prisma.facilityBooking.create({
+      data: { 
+        ...bookingData, 
+        tenant_id,
+        facility_id: facilityId,
+        customer_id: customerId
+      }
     });
   }
 
-  async updateBookingStatus(tenantId: string, id: string, status: string) {
-    return prisma.facilityBooking.update({
+  async updateBookingStatus(tenant_id: string, id: string, status: string) {
+    return this.prisma.facilityBooking.update({
       where: { id },
       data: { status }
     });

@@ -8,9 +8,9 @@ export class CrmService {
   private calculateLeadScore(lead: any): number {
     let score = 0;
     if (lead.budgetMax) score += 20; // Budget fit mock
-    if (lead.activities?.some(a => a.type === 'CALL')) score += 20;
-    if (lead.siteVisits?.some(v => v.status === 'COMPLETED')) score += 30;
-    if (lead.activities?.some(a => a.type === 'WHATSAPP')) score += 10;
+    if (lead.activities?.some((a: any) => a.type === 'CALL')) score += 20;
+    if (lead.siteVisits?.some((v: any) => v.status === 'COMPLETED')) score += 30;
+    if (lead.activities?.some((a: any) => a.type === 'WHATSAPP')) score += 10;
     if (lead.activities?.length > 0) score += 20;
     return Math.min(score, 100);
   }
@@ -23,8 +23,8 @@ export class CrmService {
     return 'N/A';
   }
 
-  async getLeads(tenantId: string, folder?: string) {
-    let whereClause: any = { tenantId };
+  async getLeads(tenant_id: string, folder?: string) {
+    let whereClause: any = { tenant_id };
     
     if (folder) {
       switch (folder) {
@@ -43,7 +43,6 @@ export class CrmService {
         case 'bookings':
           whereClause.status = 'BOOKING';
           break;
-        // customers and brokers handled elsewhere or with different logic
       }
     }
 
@@ -63,9 +62,9 @@ export class CrmService {
     }));
   }
 
-  async getLead(tenantId: string, id: string) {
+  async getLead(tenant_id: string, id: string) {
     const lead = await this.prisma.lead.findUnique({
-      where: { id, tenantId },
+      where: { id, tenant_id },
       include: {
         activities: { orderBy: { createdAt: 'desc' } },
         siteVisits: true,
@@ -82,11 +81,10 @@ export class CrmService {
     };
   }
 
-  async createLead(tenantId: string, data: any) {
-    // Initial creation logic
+  async createLead(tenant_id: string, data: any) {
     const lead = await this.prisma.lead.create({
       data: {
-        tenantId,
+        tenant_id,
         name: data.name,
         phone: data.phone,
         email: data.email,
@@ -97,21 +95,19 @@ export class CrmService {
         budgetMax: data.budgetMax
       }
     });
-
-    // Score is 0 initially, recalculate will happen on activities
     return lead;
   }
 
-  async updateLeadStatus(tenantId: string, id: string, status: string) {
+  async updateLeadStatus(tenant_id: string, id: string, status: string) {
     const lead = await this.prisma.lead.update({
-      where: { id, tenantId },
+      where: { id, tenant_id },
       data: { status }
     });
 
     await this.prisma.leadActivity.create({
       data: {
-        tenantId,
-        leadId: id,
+        tenant_id,
+        lead_id: id,
         type: 'STATUS_CHANGE',
         title: `Status updated to ${status}`
       }
@@ -120,20 +116,19 @@ export class CrmService {
     return lead;
   }
 
-  async addActivity(tenantId: string, leadId: string, data: any) {
+  async addActivity(tenant_id: string, lead_id: string, data: any) {
     const activity = await this.prisma.leadActivity.create({
       data: {
-        tenantId,
-        leadId,
-        type: data.type, // CALL, WHATSAPP, EMAIL
+        tenant_id,
+        lead_id,
+        type: data.type,
         title: data.title,
         details: data.details
       }
     });
 
-    // Recalculate Score
     const fullLead = await this.prisma.lead.findUnique({
-      where: { id: leadId },
+      where: { id: lead_id },
       include: { activities: true, siteVisits: true }
     });
 
@@ -141,7 +136,7 @@ export class CrmService {
       const newScore = this.calculateLeadScore(fullLead);
       if (newScore !== fullLead.score) {
         await this.prisma.lead.update({
-          where: { id: leadId },
+          where: { id: lead_id },
           data: { score: newScore }
         });
       }
@@ -150,64 +145,72 @@ export class CrmService {
     return activity;
   }
 
-  async reserveUnit(tenantId: string, leadId: string, unitId: string) {
-    // 1. Mark unit as RESERVED in main Unit table
+  async reserveUnit(tenant_id: string, lead_id: string, unit_id: string) {
     await this.prisma.unit.update({
-      where: { id: unitId },
-      data: { status: 'RESERVED' }
+      where: { unit_id },
+      data: { status: 'OCCUPIED' }
     });
 
-    // 2. Link as InterestedUnit
     return this.prisma.interestedUnit.create({
       data: {
-        tenantId,
-        leadId,
-        unitId,
+        tenant_id,
+        lead_id,
+        unit_id,
         status: 'RESERVED',
         reservedAt: new Date()
       }
     });
   }
 
-  async getInventory(tenantId: string, filters: any) {
+  async getInventory(tenant_id: string, filters: any) {
     let whereClause: any = { 
       floor: {
-        tower: {
-          propertyProject: { tenantId }
+        building: {
+          property: { tenant_id }
         }
       }
     };
 
     if (filters.status) whereClause.status = filters.status;
-    if (filters.projectId) whereClause.floor.tower.propertyProject.id = filters.projectId;
-    if (filters.towerId) whereClause.floor.tower.id = filters.towerId;
+    if (filters.projectId) {
+      if (!whereClause.floor.building.property.id) {
+        whereClause.floor.building.property.id = filters.projectId;
+      }
+    }
+    if (filters.towerId) {
+      whereClause.floor.building.building_id = filters.towerId;
+    }
 
     return this.prisma.unit.findMany({
       where: whereClause,
       include: {
         floor: {
           include: {
-            tower: {
+            building: {
               include: {
-                propertyProject: true
+                property: true
               }
             }
           }
         }
       },
-      take: 100 // limit for now
+      take: 100
     });
   }
 
-  async compareUnits(tenantId: string, unitIds: string[]) {
+  async compareUnits(tenant_id: string, unitIds: string[]) {
     return this.prisma.unit.findMany({
       where: {
-        id: { in: unitIds },
-        floor: { tower: { propertyProject: { tenantId } } }
+        unit_id: { in: unitIds },
+        floor: { building: { property: { tenant_id } } }
       },
       include: {
         floor: {
-          include: { tower: { include: { propertyProject: true } } }
+          include: {
+            building: {
+              include: { property: true }
+            }
+          }
         }
       }
     });

@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, MinLength, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, MinLength, IsString, IsOptional } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -23,13 +23,17 @@ export class RegisterDto {
 
   @IsString()
   @IsNotEmpty()
-  firstName: string;
+  fullName: string;
 
   @IsString()
   @IsNotEmpty()
-  lastName: string;
+  roleId: string;
 
   @IsString()
   @IsNotEmpty()
-  tenantId: string;
+  scopeReference: string;
+
+  @IsString()
+  @IsOptional()
+  tenantId?: string;
 }

@@ -1,12 +1,40 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileText, Download, Eye, TrendingUp, MoreHorizontal, ArrowUpRight, Loader2, Check } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useDashboardKpis, useDashboardCharts, useDashboardPortfolio, useDashboardTopAssets } from '@/hooks/useDashboard';
+import LandingPage from '@/components/landing/LandingPage';
 
-export default function OwnerDashboard() {
+export default function RootPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    setIsAuthenticated(!!token);
+  }, []);
+
+  // Render a clean loader while verifying authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-[#121212]">
+        <Loader2 className="w-10 h-10 text-brand-blue animate-spin mb-4" />
+        <p className="text-[#A1A1AA] text-sm font-bold tracking-widest uppercase">Verifying Authorization...</p>
+      </div>
+    );
+  }
+
+  // Render landing page if not authenticated
+  if (!isAuthenticated) {
+    return <LandingPage />;
+  }
+
+  // Render dashboard if authenticated
+  return <OwnerDashboard />;
+}
+
+function OwnerDashboard() {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportGenerated, setReportGenerated] = useState(false);

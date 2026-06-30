@@ -1,22 +1,22 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ResidentService {
-  async getResidents(tenantId: string) {
-    return prisma.customer.findMany({ 
-      where: { tenantId },
+  constructor(private prisma: PrismaService) {}
+
+  async getResidents(tenant_id: string) {
+    return this.prisma.customer.findMany({ 
+      where: { tenant_id },
       include: {
         familyMembers: true,
         ownedUnits: {
           include: {
             floor: {
               include: {
-                tower: {
+                building: {
                   include: {
-                    propertyProject: true
+                    property: true
                   }
                 }
               }
@@ -27,8 +27,8 @@ export class ResidentService {
     });
   }
 
-  async getResidentDetails(tenantId: string, id: string) {
-    return prisma.customer.findUnique({
+  async getResidentDetails(tenant_id: string, id: string) {
+    return this.prisma.customer.findUnique({
       where: { id },
       include: {
         pets: true,
@@ -38,15 +38,15 @@ export class ResidentService {
           include: {
             parkingSlot: true,
             maintenanceBills: {
-              where: { tenantId }
+              where: { tenant_id }
             },
             floor: {
               include: {
-                tower: {
+                building: {
                   include: {
-                    propertyProject: {
+                    property: {
                       include: {
-                        UtilityMeter: {
+                        UtilityMeters: {
                           include: { consumptions: true }
                         }
                       }
@@ -62,26 +62,26 @@ export class ResidentService {
     });
   }
 
-  async assignUnit(tenantId: string, data: any) {
+  async assignUnit(tenant_id: string, data: any) {
     const { unitId, name, email, phone, familyMembers } = data;
 
-    const unit = await prisma.unit.findUnique({ where: { id: unitId } });
+    const unit = await this.prisma.unit.findUnique({ where: { unit_id: unitId } });
     if (!unit) throw new NotFoundException('Unit not found');
 
     // Create the customer
-    const customer = await prisma.customer.create({
+    const customer = await this.prisma.customer.create({
       data: {
-        tenantId,
+        tenant_id,
         name,
         email,
         phone,
         kycStatus: 'VERIFIED',
         ownedUnits: {
-          connect: { id: unitId }
+          connect: { unit_id: unitId }
         },
         familyMembers: {
           create: (familyMembers || []).map((fm: any) => ({
-            tenantId,
+            tenant_id,
             firstName: fm.firstName,
             lastName: fm.lastName,
             relation: fm.relation,
@@ -91,8 +91,8 @@ export class ResidentService {
     });
 
     // Mark unit as sold/occupied
-    await prisma.unit.update({
-      where: { id: unitId },
+    await this.prisma.unit.update({
+      where: { unit_id: unitId },
       data: { status: 'SOLD' }
     });
 

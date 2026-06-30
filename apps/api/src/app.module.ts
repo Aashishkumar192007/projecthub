@@ -15,6 +15,7 @@ import { FloorModule } from './floor/floor.module';
 import { UnitModule } from './unit/unit.module';
 import { ResidentModule } from './resident/resident.module';
 import { CrmModule } from './crm/crm.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -29,7 +30,8 @@ import { CrmModule } from './crm/crm.module';
     FloorModule,
     UnitModule,
     ResidentModule,
-    CrmModule
+    CrmModule,
+    NotificationModule
   ],
   controllers: [AppController],
   providers: [AppService],

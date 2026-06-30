@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class MaintenanceBillingService {
-  async getBills(tenantId: string) {
-    return prisma.maintenanceBill.findMany({
-      where: { tenantId },
+  constructor(private prisma: PrismaService) {}
+
+  async getBills(tenant_id: string) {
+    return this.prisma.maintenanceBill.findMany({
+      where: { tenant_id },
       include: {
         lineItems: true,
         unit: true,
@@ -16,13 +16,14 @@ export class MaintenanceBillingService {
     });
   }
 
-  async createBill(tenantId: string, data: any) {
-    // Expected data: { societyId, unitId, invoiceId, billingPeriod, amount, lineItems: [{ description, amount }] }
-    const { lineItems, ...billData } = data;
-    return prisma.maintenanceBill.create({
+  async createBill(tenant_id: string, data: any) {
+    const { lineItems, unitId, invoiceId, ...billData } = data;
+    return this.prisma.maintenanceBill.create({
       data: {
         ...billData,
-        tenantId,
+        tenant_id,
+        unit_id: unitId,
+        invoice_id: invoiceId,
         lineItems: {
           create: lineItems
         }

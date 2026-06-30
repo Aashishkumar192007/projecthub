@@ -1,41 +1,49 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateWorkOrderDto, UpdateWorkOrderDto } from './dto/create-work-order.dto';
 
 @Injectable()
 export class WorkOrderService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createWorkOrderDto: any, tenantId: string) {
-    const property = await this.prisma.propertyProject.findFirst({
-      where: { id: createWorkOrderDto.propertyProjectId, tenantId }
-    });
+  async create(createWorkOrderDto: any, tenant_id: string) {
+    const project_id = createWorkOrderDto.propertyProjectId || createWorkOrderDto.projectId;
+    if (project_id) {
+      const project = await this.prisma.project.findFirst({
+        where: { project_id, tenant_id }
+      });
 
-    if (!property) throw new ForbiddenException('Invalid Property or unauthorized access.');
+      if (!project) throw new ForbiddenException('Invalid Project or unauthorized access.');
+    }
+
+    const { unitId, vendorId, complaintId, propertyProjectId, ...data } = createWorkOrderDto;
 
     return this.prisma.workOrder.create({
       data: {
-        ...createWorkOrderDto,
-        tenantId,
+        ...data,
+        tenant_id,
+        unit_id: unitId,
+        vendor_id: vendorId,
+        complaint_id: complaintId,
+        project_id: project_id,
         status: createWorkOrderDto.status || 'OPEN',
-      } as any,
+      },
     });
   }
 
-  async findAll(tenantId: string) {
+  async findAll(tenant_id: string) {
     return this.prisma.workOrder.findMany({
-      where: { tenantId },
+      where: { tenant_id },
       include: {
         assignedToVendor: { select: { name: true } }
       }
-    } as any);
+    });
   }
 
-  async findOne(id: string, tenantId: string) {
+  async findOne(id: string, tenant_id: string) {
     const workOrder = await this.prisma.workOrder.findFirst({
-      where: { id, tenantId },
+      where: { id, tenant_id },
       include: { unit: true, assignedToVendor: true, complaint: true }
-    } as any);
+    });
 
     if (!workOrder) throw new NotFoundException('Work Order not found');
     return workOrder;

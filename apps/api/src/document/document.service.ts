@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class DocumentService {
-  async getDocuments(tenantId: string) {
-    return prisma.document.findMany({ where: { tenantId } });
+  constructor(private prisma: PrismaService) {}
+
+  async getDocuments(tenant_id: string) {
+    return this.prisma.document.findMany({ where: { tenant_id } });
   }
 
-  async uploadDocument(tenantId: string, data: any) {
-    return prisma.document.create({ data: { ...data, tenantId } });
+  async uploadDocument(tenant_id: string, data: any) {
+    return this.prisma.document.create({ data: { ...data, tenant_id } });
   }
 }
